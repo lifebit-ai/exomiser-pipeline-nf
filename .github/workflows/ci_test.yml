@@ -1,0 +1,26 @@
+# name: CI test
+# # This workflow is triggered on PRs of type review_requested or ready_for_review, against dev or main
+# on:
+#   pull_request:
+#     types: [review_requested, ready_for_review]
+#     branches:
+#       - main
+#       - dev
+#   workflow_dispatch:
+
+# jobs:
+#   docker:
+#     runs-on: ubuntu-latest
+#     strategy:
+#       matrix:
+#         nxf_ver: ['20.01.0', '']
+#     steps:
+#       - uses: actions/checkout@v3.0.1
+#       - name: Install Nextflow
+#         run: |
+#           export NXF_VER=${{ matrix.nxf_ver }}
+#           wget -qO- get.nextflow.io | bash
+#           sudo mv nextflow /usr/local/bin/
+#       - name: Basic workflow tests
+#         run: |
+#           nextflow run ${GITHUB_WORKSPACE} -profile test

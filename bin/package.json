@@ -1,0 +1,21 @@
+{
+  "name": "bin",
+  "version": "1.0.0",
+  "description": "",
+  "main": "rename_fields.js",
+  "dependencies": {
+    "commander": "^7.2.0",
+    "jsonschema": "^1.4.0",
+    "minimist": "^1.2.5",
+    "mongodb": "^3.6.9",
+    "mongoose": "^5.12.13",
+    "to-json-schema": "^0.2.5"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

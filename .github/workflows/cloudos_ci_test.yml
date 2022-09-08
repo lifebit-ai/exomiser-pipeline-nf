@@ -1,0 +1,128 @@
+name: CI test on CloudOS
+# This workflow is triggered on PRs of type review_requested or ready_for_review, against dev or main
+on:
+  pull_request:
+    types: [review_requested, ready_for_review]
+    branches:
+      - main
+      - dev
+  workflow_dispatch:
+
+jobs:
+  test_on_cloudos_prod:
+    runs-on: ubuntu-20.04
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Install pip
+        run: sudo apt-get --assume-yes install python3-pip
+
+      - name: Clone CloudOS repo
+        uses: actions/checkout@v2
+        with:
+          repository: lifebit-ai/cloudos-py
+          token: ${{ secrets.GH_PAT }}
+          path: cloudos-py 
+          ref: ce114ef7ba89f9c0bd8c013d08ac6254d6d9f654
+
+      - name: Submit job using cloudos-py
+        env:
+          CLOUDOS_TOKEN: ${{ secrets.CLOUDOS_TOKEN }}
+          GIT_COMMIT: ${{ github.event.pull_request.head.sha }}
+          PR_NUM: ${{ github.event.number }}
+        run: |
+          set -o pipefail
+          cd cloudos-py
+          pip3 install -r requirements.txt
+          pip3 install .
+          # Production command
+          cloudos job run \
+              -k $CLOUDOS_TOKEN \
+              --cloudos-url https://cloudos.lifebit.ai \
+              --workspace-id 5c6d3e9bd954e800b23f8c62 \
+              --project-name ci-test \
+              --workflow-name exomiser-nf \
+              --job-config ${GITHUB_WORKSPACE}/conf/test.config \
+              --git-commit $GIT_COMMIT \
+              --job-name exomiser-nf-CI-test-GithubCommit[${GIT_COMMIT:0:6}]-PR_Number[${PR_NUM}] \
+              --spot | tee ../out_cloudos.txt
+          # Processing outputs to get the PR message
+          printf "**CloudOS CI test** - :rocket: " > pr_message.txt
+          awk '{if (NR==6) print $0}' ../out_cloudos.txt >> pr_message.txt
+          printf "\nThere will be a following **Status update** comment in the PR, once the CloudOS job completes. Please wait for that.\n" >> pr_message.txt
+          echo 'CLOUDOS_STATUS<<EOF' >> $GITHUB_ENV
+          cat pr_message.txt >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
+      - name: Send cloudos start message to PR comment
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: ${{ env.CLOUDOS_STATUS }}
+          repo-token: ${{ secrets.GH_PAT }}
+          repo-token-user-login: 'github-actions[bot]'
+          allow-repeats: true
+
+      - name: Check job using cloudos-py
+        env:
+          CLOUDOS_TOKEN: ${{ secrets.CLOUDOS_TOKEN }}
+          GIT_COMMIT: ${{ github.event.pull_request.head.sha }}
+          JOB_IDMSG: ${{ env.CLOUDOS_STATUS }}
+        run: |
+          set -o pipefail
+          cd cloudos-py
+          echo "$JOB_IDMSG" > job_idmsg.txt
+          JOB_ID=`head -1 job_idmsg.txt | rev | cut -f 1 -d '/' | rev`
+          # Check job status every minute
+          JOB_OUT=""
+          TRY_NUM=1
+          while [[ $JOB_OUT = "" ]] && [[ $TRY_NUM -le 120 ]]
+          do
+              cloudos job status \
+                  -k $CLOUDOS_TOKEN \
+                  --cloudos-url https://cloudos.lifebit.ai \
+                  --job-id $JOB_ID | tee ../out_cloudos.txt
+              if grep -q -e "completed" ../out_cloudos.txt
+              then
+                  JOB_OUT="**Status update** - :white_check_mark: CloudOS CI test job has finished with status - **COMPLETED**. You can check it in https://cloudos.lifebit.ai/app/job/$JOB_ID"
+              elif grep -q -e "failed" ../out_cloudos.txt
+              then
+                  JOB_OUT="**Status update** - :x: CloudOS CI test job has finished with status - **FAILED**. You can check it in https://cloudos.lifebit.ai/app/job/$JOB_ID"
+              elif grep -q -e "aborted" ../out_cloudos.txt
+              then
+                  JOB_OUT="**Status update** - :x: CloudOS CI test job has finished with status - **ABORTED**. You can check it in https://cloudos.lifebit.ai/app/job/$JOB_ID"
+              elif [[ $TRY_NUM -eq 120 ]]
+              then
+                  JOB_OUT="**Status update** - :warning: CloudOS CI test job has not finished but you exceeded the maximum monitoring time. Please check its status in https://cloudos.lifebit.ai/app/job/$JOB_ID"
+              else
+                  sleep 1m
+                  TRY_NUM=$((TRY_NUM+1))
+              fi
+          done
+          # Processing outputs to get the PR message
+          echo 'CLOUDOS_STATUS<<EOF' >> $GITHUB_ENV
+          echo $JOB_OUT  >> $GITHUB_ENV
+          echo 'EOF' >> $GITHUB_ENV
+
+      - name: Send cloudos final message to PR comment
+        uses: mshick/add-pr-comment@v1
+        with:
+          message: ${{ env.CLOUDOS_STATUS }}
+          repo-token: ${{ secrets.GH_PAT }}
+          repo-token-user-login: 'github-actions[bot]'
+          allow-repeats: true
+
+      - name: Make the CI fail when CloudOS fails
+        env:
+          JOB_OUT: ${{ env.CLOUDOS_STATUS }}
+        run: |
+          set -o pipefail
+          echo $JOB_OUT > job_out.txt
+          if grep -q -v -e "COMPLETED" job_out.txt
+          then
+              echo "Exiting with code 1 as CloudOS CI test was not successful"
+              exit 1
+          fi

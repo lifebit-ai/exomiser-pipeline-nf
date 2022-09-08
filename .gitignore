@@ -1,0 +1,28 @@
+// Nextflow related files to ignore
+results
+work
+.nextflow
+.nextflow*
+nextflow_schema.json
+
+// Credentials to never commit to github
+*.pem
+*-*-*.json
+
+// Bioinformatics files
+*.vcf
+*.vcf*
+*fastq*
+*fastq
+*fq*
+*fq
+**/2102_*
+exo
+
+// Ignore node modules
+bin/node_modules/
+
+// Mac files
+.DS_Store
+docs/.DS_Store
+
