@@ -121,7 +121,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 
 
 process exomiser {
-  tag "${vcf}-${prioritiser}"
+  tag "${vcf_path}"
   publishDir "${params.outdir}/${sample_name}", mode: 'copy'
 
   input:
@@ -142,6 +142,7 @@ process exomiser {
   file("*AR.variants.tsv") optional true
   file("*yml") optional true
   file("MultiQC/*.html") optional true
+  file("in.vcf")
 
   script:
   final_step = "finished"
@@ -151,12 +152,13 @@ process exomiser {
     """
     echo "$vcf_path"
     # link the staged/downloaded data to predefined path
-    #ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
-    #ln -s "\$PWD/${vcf_path}" in.vcf
+    ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
+    ln -s "\$PWD/${vcf_path}" in.vcf
 
     # Workaround for symlinked files not found
     HPO_TERMS="${proband_id}-HPO.txt"
     VCF_PATH="in.vcf"
+
 
 
     # Modify auto_config.to pass the params
@@ -175,18 +177,18 @@ process exomiser {
 
     # Printing (ls, see files; cat, injected values validation)
     ${params.debug_script}
-    cat new_auto_config.yml
+    #cat new_auto_config.yml
 
     # Run Exomiser
-    ${exomiser} \
-    --analysis new_auto_config.yml \
-    --spring.config.location=$application_properties \
-    --exomiser.data-directory='.'
+    #${exomiser} \
+    #--analysis new_auto_config.yml \
+    #--spring.config.location=$application_properties \
+    #--exomiser.data-directory='.'
 
     # Create the slot for CloudOS html report preview
-    mkdir MultiQC
-    cp *.html MultiQC/multiqc_report.html
-    sed -i  "s/Anonymous/${proband_id}/" MultiQC/multiqc_report.html
+    #mkdir MultiQC
+    #cp *.html MultiQC/multiqc_report.html
+    #sed -i  "s/Anonymous/${proband_id}/" MultiQC/multiqc_report.html
 
     """
   }else{
