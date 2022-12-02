@@ -55,11 +55,18 @@ if(params.families_file) {
   exit 1, "please specify Family file with --family_file parameter"
 }
 
+// Channel
+//     .fromPath(params.families_file)
+//     .ifEmpty { exit 1, "Cannot find input file : ${params.input}" }
+//     .splitCsv(skip:1, sep:'\t')
+//     .map { run_id, proband_id, hpo, vcf_path, vcf_index_path, proband_sex, mother_id, father_id -> [ run_id, proband_id, hpo, file(vcf_path), file(vcf_index_path), proband_sex, mother_id, father_id ] }
+//     .set {ch_input}
+
 Channel
     .fromPath(params.families_file)
     .ifEmpty { exit 1, "Cannot find input file : ${params.input}" }
-    .splitCsv(skip:1, sep:'\t')
-    .map { run_id, proband_id, hpo, vcf_path, vcf_index_path, proband_sex, mother_id, father_id -> [ run_id, proband_id, hpo, file(vcf_path), file(vcf_index_path), proband_sex, mother_id, father_id ] }
+    .splitCsv(skip:1, sep:'\t', strip: true)
+    .map {row -> [ row.run_id, row.proband_id, row.hpo, file(row.vcf_path), file(row.vcf_index_path), row.proband_sex, row.mother_id, row.father_id ] }
     .set {ch_input}
 
 // Conditional creation of channels, custom if provided else default from bin/
@@ -121,13 +128,13 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 
 
 process exomiser {
-  tag "${vcf_path}"
+  tag "${vcf_path1}"
   publishDir "${params.outdir}/${sample_name}", mode: 'copy'
 
   input:
-  set run_id, proband_id, hpo, file(vcf_path), file(vcf_index_path), proband_sex, mother_id, father_id from ch_input
-  file "${proband_id}-HPO.txt" from hpo_ch
-  file "${proband_id}.ped" from ped_ch
+  set run_id, proband_id, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
+  file "${proband_id1}-HPO.txt" from hpo_ch
+  file "${proband_id1}.ped" from ped_ch
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
@@ -142,8 +149,6 @@ process exomiser {
   file("*AR.variants.tsv") optional true
   file("*yml") optional true
   file("MultiQC/*.html") optional true
-  file("in.vcf")
-
   script:
   final_step = "finished"
   if (!params.mock_exomiser)  {
@@ -153,12 +158,11 @@ process exomiser {
     echo "$vcf_path"
     # link the staged/downloaded data to predefined path
     ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
-    ln -s "\$PWD/${vcf_path}" in.vcf
+    ln -s "\$PWD/${vcf_path1}" in.vcf
 
     # Workaround for symlinked files not found
-    HPO_TERMS="${proband_id}-HPO.txt"
+    HPO_TERMS="${proband_id1}-HPO.txt"
     VCF_PATH="in.vcf"
-
 
 
     # Modify auto_config.to pass the params
@@ -168,32 +172,32 @@ process exomiser {
     sed -i "s/hpo_ids_placeholder/\$HPO_TERMS/g" new_auto_config.yml
     sed -i "s/analysis_mode_placeholder/${params.analysis_mode}/g" new_auto_config.yml
     sed -i  "s/vcf_placeholder/\$VCF_PATH" new_auto_config.yml
-    sed -i  "s/output_prefix_placeholder/sample-${vcf_path.simpleName}/" new_auto_config.yml
+    sed -i  "s/output_prefix_placeholder/sample-${vcf_path1.simpleName}/" new_auto_config.yml
     sed -i  "s/prioritiser_placeholder/${prioritiser}/" new_auto_config.yml
     sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/" new_auto_config.yml
     sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/" new_auto_config.yml
     sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/" new_auto_config.yml
-    sed -i  "s/ped:/ped: ${proband_id}.ped/" new_auto_config.yml
+    sed -i  "s/ped:/ped: ${proband_id1}.ped/" new_auto_config.yml
 
     # Printing (ls, see files; cat, injected values validation)
     ${params.debug_script}
-    #cat new_auto_config.yml
+    cat new_auto_config.yml
 
     # Run Exomiser
-    #${exomiser} \
-    #--analysis new_auto_config.yml \
-    #--spring.config.location=$application_properties \
-    #--exomiser.data-directory='.'
+    ${exomiser} \
+    --analysis new_auto_config.yml \
+    --spring.config.location=$application_properties \
+    --exomiser.data-directory='.'
 
     # Create the slot for CloudOS html report preview
-    #mkdir MultiQC
-    #cp *.html MultiQC/multiqc_report.html
-    #sed -i  "s/Anonymous/${proband_id}/" MultiQC/multiqc_report.html
+    mkdir MultiQC
+    cp *.html MultiQC/multiqc_report.html
+    sed -i  "s/Anonymous/${proband_id1}/" MultiQC/multiqc_report.html
 
     """
   }else{
     """
-    wget -O ${proband_id}.tsv ${params.mock_exomiser_output_https_url}
+    wget -O ${proband_id1}.tsv ${params.mock_exomiser_output_https_url}
     """
   }
 }
