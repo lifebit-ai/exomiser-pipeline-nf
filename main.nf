@@ -171,13 +171,13 @@ process exomiser {
     # Swap placeholders with user provided values
     sed -i "s/hpo_ids_placeholder/\$HPO_TERMS/g" new_auto_config.yml
     sed -i "s/analysis_mode_placeholder/${params.analysis_mode}/g" new_auto_config.yml
-    sed -i  "s/vcf_placeholder/\$VCF_PATH" new_auto_config.yml
-    sed -i  "s/output_prefix_placeholder/sample-${vcf_path1.simpleName}/" new_auto_config.yml
-    sed -i  "s/prioritiser_placeholder/${prioritiser}/" new_auto_config.yml
-    sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/" new_auto_config.yml
-    sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/" new_auto_config.yml
-    sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/" new_auto_config.yml
-    sed -i  "s/ped:/ped: ${proband_id1}.ped/" new_auto_config.yml
+    sed -i  "s/vcf_placeholder/\$VCF_PATH/g" new_auto_config.yml
+    sed -i  "s/output_prefix_placeholder/sample-${vcf_path1.simpleName}/g" new_auto_config.yml
+    sed -i  "s/prioritiser_placeholder/${prioritiser}/g" new_auto_config.yml
+    sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/g" new_auto_config.yml
+    sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/g" new_auto_config.yml
+    sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/g" new_auto_config.yml
+    sed -i  "s/ped:/ped: ${proband_id1}.ped/g" new_auto_config.yml
 
     # Printing (ls, see files; cat, injected values validation)
     ${params.debug_script}
