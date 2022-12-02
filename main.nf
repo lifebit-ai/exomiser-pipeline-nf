@@ -65,7 +65,7 @@ if(params.families_file) {
 Channel
     .fromPath(params.families_file)
     .ifEmpty { exit 1, "Cannot find input file : ${params.input}" }
-    .splitCsv(skip:1, sep:'\t', strip: true)
+    .splitCsv(header:true, sep:'\t', strip: true)
     .map {row -> [ row.run_id, row.proband_id, row.hpo, file(row.vcf_path), file(row.vcf_index_path), row.proband_sex, row.mother_id, row.father_id ] }
     .set {ch_input}
 
@@ -132,7 +132,7 @@ process exomiser {
   publishDir "${params.outdir}/${sample_name}", mode: 'copy'
 
   input:
-  set run_id, proband_id, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
+  set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
   file "${proband_id1}-HPO.txt" from hpo_ch
   file "${proband_id1}.ped" from ped_ch
   //The following is expected when CADD is omitted,
@@ -155,7 +155,7 @@ process exomiser {
     def exomiser_executable = "/exomiser/exomiser-cli-"+"${params.exomiser_version}"+".jar"
     def exomiser = "java -Xms2g -Xmx4g -jar "+"${exomiser_executable}"
     """
-    echo "$vcf_path"
+    echo "$vcf_path1"
     # link the staged/downloaded data to predefined path
     ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
     ln -s "\$PWD/${vcf_path1}" in.vcf
