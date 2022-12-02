@@ -46,19 +46,26 @@ log.info ""
 //   Check input parameters
 // ---------------------------------------------------*/
 
-if(params.input) {
+if(params.families_file) {
    Channel
-      .fromPath( "${params.input}" )
-      .ifEmpty { exit 1, "VCF file: ${params.input} not found"}
-      .into { ch_vcf ; ch_vcf_inspect; ch_vcf_for_geneyx }
+      .fromPath( "${params.families_file}")
+      .ifEmpty { exit 1, "Family file: ${params.families_file} not found"}
+      .set {ch_vcf}
 } else {
-  exit 1, "please specify VCF file with --input parameter"
+  exit 1, "please specify Family file with --family_file parameter"
 }
+
+Channel
+    .fromPath(params.families_file)
+    .ifEmpty { exit 1, "Cannot find input file : ${params.input}" }
+    .splitCsv(skip:1, sep:'\t')
+    .map { run_id, proband_id, hpo, vcf_path, vcf_index_path, proband_sex, mother_id, father_id -> [ run_id, proband_id, hpo, file(vcf_path), file(vcf_index_path), proband_sex, mother_id, father_id ] }
+    .set {ch_input}
 
 // Conditional creation of channels, custom if provided else default from bin/
 projectDir = workflow.projectDir
 ch_application_properties = params.application_properties ? Channel.value(file(params.application_properties)) : Channel.fromPath("${projectDir}/bin/application.properties")
-ch_auto_config_yml = params.auto_config_yml ? Channel.value(file(params.auto_config_yml)) : Channel.fromPath("${projectDir}/bin/auto_config.yml") 
+ch_auto_config_yml = params.auto_config_yml ? Channel.value(file(params.auto_config_yml)) : Channel.fromPath("${projectDir}/bin/auto_config.yml")
 
 // Stage scripts from bin
 ch_add_exomiser_fields_script = Channel.value(file("${projectDir}/bin/add_exomiser_fields_to_genotiers.js"))
@@ -78,20 +85,33 @@ println(selected_prioritisers)
 
 selected_analysis_mode = params.analysis_mode.split(',').collect{it.trim()}
 if (!checkParameterList(selected_analysis_mode, analysisModesList)) exit 1, "Unknown analysis mode, the available options are:\n$analysisModesList"
- 
-// Prevent an error in AWSBatch (when running by awsbatch executor) 
-// by which this file is taken as /home/ubuntu/hpo_terms_file.txt instead of its correct path.
-hpo_terms_filename = "${projectDir}/${params.hpo_terms_file}"
+
+ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
+
+/*--------------------------------------------------
+  Create PED and HPO file from design
+---------------------------------------------------*/
+
+//remove
+//ch_vcf_inspect.dump(tag:'ch_vcf')
+if (params.ped_file) ped_ch = Channel.value(file(params.ped_file))
+if (params.hpo_file) hpo_ch = Channel.value(file(params.hpo_file))
 
 
-Channel.fromPath("${params.hpo_terms_file}")
-      .splitCsv(sep: ',', skip: 1)
-      .unique()
-      .map {it -> it.toString().replaceAll("\\[", "").replaceAll("\\]", "")}
-      .map {it -> "'"+it.trim()+"'"}
-      .reduce { a, b -> "$a,$b" }
-      .into { ch_hpo_terms_file ; ch_hpo_terms_file_inspect; ch_hpo_terms }
-ch_hpo_terms_file_inspect.dump(tag:'ch_hpo_terms (retrieve_hpo_terms: false)')
+if(!params.ped_file & !params.hpo_file){
+  process ped_hpo_creation {
+    publishDir "${params.outdir}/familyfile/", mode: 'copy'
+    input:
+    file family_file from ch_vcf
+    output:
+    file "*-HPO.txt" into hpo_ch
+    file "*.ped" into ped_ch
+    script:
+    """
+    python3 $baseDir/${params.py_file} --input_family $family_file
+    """
+  }
+}
 
 /*--------------------------------------------------
   Run containarised Exomiser
@@ -99,14 +119,15 @@ ch_hpo_terms_file_inspect.dump(tag:'ch_hpo_terms (retrieve_hpo_terms: false)')
 
 ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 
-ch_vcf_inspect.dump(tag:'ch_vcf')
 
 process exomiser {
   tag "${vcf}-${prioritiser}"
   publishDir "${params.outdir}/${sample_name}", mode: 'copy'
 
   input:
-  file(vcf) from ch_vcf
+  set run_id, proband_id, hpo, file(vcf_path), file(vcf_index_path), proband_sex, mother_id, father_id from ch_input
+  file "${proband_id}-HPO.txt" from hpo_ch
+  file "${proband_id}.ped" from ped_ch
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
@@ -114,7 +135,6 @@ process exomiser {
   file(application_properties) from ch_application_properties
   file(auto_config_yml) from ch_auto_config_yml
   file(exomiser_data) from ch_exomiser_data
-  val(hpo_terms) from ch_hpo_terms
   each prioritiser from selected_prioritisers
 
   output:
@@ -129,58 +149,49 @@ process exomiser {
     def exomiser_executable = "/exomiser/exomiser-cli-"+"${params.exomiser_version}"+".jar"
     def exomiser = "java -Xms2g -Xmx4g -jar "+"${exomiser_executable}"
     """
+    echo "$vcf_path"
     # link the staged/downloaded data to predefined path
-    ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
+    #ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
+    #ln -s "\$PWD/${vcf_path}" in.vcf
 
-    ls -l
     # Workaround for symlinked files not found
-    HPO_TERMS="${hpo_terms}"
-    
-    # error if no HPO term found
-    if [[ "\${HPO_TERMS}" == "null" ]]; then
-    	echo "WARNING: No HPO terms found. So this step of exomiser is skipped, No report will be generated."
-	    echo "Please check HPO terms for the patient in the clinical-portal for whom this sample belongs - ${sample_name}"
-      # solutions for AWS batch
-      touch no_hpo_term.html
-      touch no_hpo_term.vcf
-      touch no_hpo_term.json
-      touch no_hpo_term.yml
-      mkdir -p MultiQC
-      touch MultiQC/no_hpo_term.html
+    HPO_TERMS="${proband_id}-HPO.txt"
+    VCF_PATH="in.vcf"
 
-    else
-      # Modify auto_config.to pass the params
-      cp ${auto_config_yml} new_auto_config.yml
 
-      # Swap placeholders with user provided values
-      sed -i "s/hpo_ids_placeholder/\$HPO_TERMS/g" new_auto_config.yml
-      sed -i "s/analysis_mode_placeholder/${params.analysis_mode}/g" new_auto_config.yml
-      sed -i  "s/vcf_placeholder/${vcf}/" new_auto_config.yml
-      sed -i  "s/output_prefix_placeholder/sample-${vcf.simpleName}/" new_auto_config.yml
-      sed -i  "s/prioritiser_placeholder/${prioritiser}/" new_auto_config.yml
-      sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/" new_auto_config.yml
-      sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/" new_auto_config.yml
-      sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/" new_auto_config.yml
+    # Modify auto_config.to pass the params
+    cp ${auto_config_yml} new_auto_config.yml
 
-      # Printing (ls, see files; cat, injected values validation)
-      ${params.debug_script}
-      cat new_auto_config.yml
+    # Swap placeholders with user provided values
+    sed -i "s/hpo_ids_placeholder/\$HPO_TERMS/g" new_auto_config.yml
+    sed -i "s/analysis_mode_placeholder/${params.analysis_mode}/g" new_auto_config.yml
+    sed -i  "s/vcf_placeholder/\$VCF_PATH" new_auto_config.yml
+    sed -i  "s/output_prefix_placeholder/sample-${vcf_path.simpleName}/" new_auto_config.yml
+    sed -i  "s/prioritiser_placeholder/${prioritiser}/" new_auto_config.yml
+    sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/" new_auto_config.yml
+    sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/" new_auto_config.yml
+    sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/" new_auto_config.yml
+    sed -i  "s/ped:/ped: ${proband_id}.ped/" new_auto_config.yml
 
-      # Run Exomiser
-      ${exomiser} \
-      --analysis new_auto_config.yml \
-      --spring.config.location=$application_properties \
-      --exomiser.data-directory='.'
+    # Printing (ls, see files; cat, injected values validation)
+    ${params.debug_script}
+    cat new_auto_config.yml
 
-      # Create the slot for CloudOS html report preview
-      mkdir MultiQC
-      cp *.html MultiQC/multiqc_report.html
-      sed -i  "s/Anonymous/${sample_name}/" MultiQC/multiqc_report.html
-    fi
+    # Run Exomiser
+    ${exomiser} \
+    --analysis new_auto_config.yml \
+    --spring.config.location=$application_properties \
+    --exomiser.data-directory='.'
+
+    # Create the slot for CloudOS html report preview
+    mkdir MultiQC
+    cp *.html MultiQC/multiqc_report.html
+    sed -i  "s/Anonymous/${proband_id}/" MultiQC/multiqc_report.html
+
     """
   }else{
     """
-    wget -O ${sample_name}.tsv ${params.mock_exomiser_output_https_url}
+    wget -O ${proband_id}.tsv ${params.mock_exomiser_output_https_url}
     """
   }
 }
@@ -217,7 +228,7 @@ def checkParameterList(list, realList) {
 }
 
 /*--------------------------------------------------
-  Definitions of accepted values for params 
+  Definitions of accepted values for params
 ---------------------------------------------------*/
 
 
