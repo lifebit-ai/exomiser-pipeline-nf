@@ -161,7 +161,7 @@ process exomiser {
     ln -s "\$PWD/${vcf_path1}" in.vcf
 
     # Workaround for symlinked files not found
-    HPO_TERMS="${proband_id1}-HPO.txt"
+    HPO_TERMS=`cat ${proband_id1}-HPO.txt`
     VCF_PATH="in.vcf"
 
 
