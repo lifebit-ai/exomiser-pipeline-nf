@@ -158,11 +158,11 @@ process exomiser {
     echo "$vcf_path1"
     # link the staged/downloaded data to predefined path
     ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
-    ln -s "\$PWD/${vcf_path1}" in.vcf
+
 
     # Workaround for symlinked files not found
     HPO_TERMS=`cat ${proband_id1}-HPO.txt`
-    VCF_PATH="in.vcf"
+
 
 
     # Modify auto_config.to pass the params
@@ -171,7 +171,7 @@ process exomiser {
     # Swap placeholders with user provided values
     sed -i "s/hpo_ids_placeholder/\$HPO_TERMS/g" new_auto_config.yml
     sed -i "s/analysis_mode_placeholder/${params.analysis_mode}/g" new_auto_config.yml
-    sed -i  "s/vcf_placeholder/\$VCF_PATH/g" new_auto_config.yml
+    sed -i  "s/vcf_placeholder/${vcf_path1}/g" new_auto_config.yml
     sed -i  "s/output_prefix_placeholder/sample-${vcf_path1.simpleName}/g" new_auto_config.yml
     sed -i  "s/prioritiser_placeholder/${prioritiser}/g" new_auto_config.yml
     sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/g" new_auto_config.yml
