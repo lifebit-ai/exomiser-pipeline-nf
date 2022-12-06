@@ -7,7 +7,7 @@ analysis:
     genomeAssembly: hg38
     vcf: vcf_placeholder
     ped:
-    proband:
+    proband: proband_placeholder
     hpoIds: [hpo_ids_placeholder]
     # These are the default settings, with values representing the maximum minor allele frequency in percent (%) permitted for an
     # allele to be considered as a causative candidate under that mode of inheritance.
@@ -112,12 +112,12 @@ analysis:
     ]
 outputOptions:
     outputContributingVariantsOnly: false
-    #numGenes options: 0 = all or specify a limit e.g. 500 for the first 500 results  
+    #numGenes options: 0 = all or specify a limit e.g. 500 for the first 500 results
     numGenes: 0
     #outputPrefix options: specify the path/filename without an extension and this will be added
-    # according to the outputFormats option. If unspecified this will default to the following: 
+    # according to the outputFormats option. If unspecified this will default to the following:
     # {exomiserDir}/results/input-vcf-name-exomiser-results.html
-    # alternatively, specify a fully qualifed path only. e.g. /users/jules/exomes/analysis    
+    # alternatively, specify a fully qualifed path only. e.g. /users/jules/exomes/analysis
     outputPrefix: output_prefix_placeholder
     #out-format options: HTML, JSON, TSV_GENE, TSV_VARIANT, VCF (default: HTML)
     outputFormats: [HTML, JSON, TSV_GENE, TSV_VARIANT, VCF]
