@@ -6,7 +6,7 @@ analysis:
     # hg19 or hg38 - ensure that the application has been configured to run the specified assembly otherwise it will halt.
     genomeAssembly: hg38
     vcf: vcf_placeholder
-    ped:
+    ped: ped_placeholder
     proband: proband_placeholder
     hpoIds: [hpo_ids_placeholder]
     # These are the default settings, with values representing the maximum minor allele frequency in percent (%) permitted for an
