@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-
+nextflow.enable.dsl=1
 import groovy.json.*
 
 /*
@@ -16,13 +16,12 @@ c_white  = "\033[0;37m";
 c_yellow = "\033[0;33m";
 c_purple = "\033[0;35m";
 
-sample_name = params.sample_name
 // Header log info
 log.info "-${c_purple}\nPARAMETERS SUMMARY${c_reset}-"
 log.info "-${c_teal}config:${c_reset}- ${params.config}"
-log.info "-${c_teal}input:${c_reset}- ${params.input}"
-log.info "-${c_teal}sample_name:${c_reset}- ${sample_name}"
-log.info "-${c_teal}filename_hpo:${c_reset}- ${params.filename_hpo}"
+log.info "-${c_teal}filename_design_file:${c_reset}- ${params.families_file}"
+if(params.hpo_file) log.info "-${c_teal}filename_hpo:${c_reset}- ${params.filename_hpo}"
+if(params.ped_file) log.info "-${c_teal}filename_ped:${c_reset}- ${params.ped_file}"
 log.info "-${c_teal}analysis_mode:${c_reset}- ${params.analysis_mode}"
 log.info "-${c_teal}exomiser_data:${c_reset}- ${params.exomiser_data}"
 log.info "-${c_teal}exomiser_phenotype_data:${c_reset}- ${params.exomiser_phenotype_data}"
@@ -34,7 +33,6 @@ log.info "-${c_teal}min_priority_score:${c_reset}- ${params.min_priority_score}"
 log.info "-${c_teal}application_properties:${c_reset}- ${params.application_properties}"
 log.info "-${c_teal}auto_config_yml:${c_reset}- ${params.auto_config_yml}"
 log.info "-${c_teal}exomiser_data_directory:${c_reset}- ${params.exomiser_data_directory}"
-log.info "-${c_teal}hpo terms from a file:${c_reset}- ${params.hpo_terms_file}"
 log.info "-${c_teal}exomiser_container_tag:${c_reset}- ${params.exomiser_container_tag}"
 log.info "-${c_teal}debug_script:${c_reset}- ${params.debug_script}"
 log.info "-${c_teal}echo:${c_reset}- ${params.echo}"
@@ -55,16 +53,11 @@ if(params.families_file) {
   exit 1, "please specify Family file with --family_file parameter"
 }
 
-// Channel
-//     .fromPath(params.families_file)
-//     .ifEmpty { exit 1, "Cannot find input file : ${params.input}" }
-//     .splitCsv(skip:1, sep:'\t')
-//     .map { run_id, proband_id, hpo, vcf_path, vcf_index_path, proband_sex, mother_id, father_id -> [ run_id, proband_id, hpo, file(vcf_path), file(vcf_index_path), proband_sex, mother_id, father_id ] }
-//     .set {ch_input}
+
 
 Channel
     .fromPath(params.families_file)
-    .ifEmpty { exit 1, "Cannot find input file : ${params.input}" }
+    .ifEmpty { exit 1, "Cannot find input file : ${params.families_file}" }
     .splitCsv(header:true, sep:'\t', strip: true)
     .map {row -> [ row.run_id, row.proband_id, row.hpo, file(row.vcf_path), file(row.vcf_index_path), row.proband_sex, row.mother_id, row.father_id ] }
     .set {ch_input}
@@ -94,7 +87,7 @@ selected_analysis_mode = params.analysis_mode.split(',').collect{it.trim()}
 if (!checkParameterList(selected_analysis_mode, analysisModesList)) exit 1, "Unknown analysis mode, the available options are:\n$analysisModesList"
 
 ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
-
+ch_ped_parser_py = Channel.fromPath("${params.ped_parser_py}")
 /*--------------------------------------------------
   Create PED and HPO file from design
 ---------------------------------------------------*/
@@ -104,18 +97,19 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 if (params.ped_file) ped_ch = Channel.value(file(params.ped_file))
 if (params.hpo_file) hpo_ch = Channel.value(file(params.hpo_file))
 
-
 if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
+    container 'broadinstitute/gatk'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
     input:
     file family_file from ch_vcf
+    file(ped_parser_py) from ch_ped_parser_py
     output:
     file "*-HPO.txt" into hpo_ch
     file "*.ped" into ped_ch
     script:
     """
-    python3 $baseDir/${params.py_file} --input_family $family_file
+    python3 $ped_parser_py --input_family $family_file
     """
   }
 }
@@ -129,7 +123,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 
 process exomiser {
   tag "${vcf_path1}"
-  publishDir "${params.outdir}/${sample_name}", mode: 'copy'
+  publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
 
   input:
   set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
