@@ -174,7 +174,7 @@ process exomiser {
     sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/g" new_auto_config.yml
     sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/g" new_auto_config.yml
     sed -i  "s/ped:/ped: \$PED_FILE/g" new_auto_config.yml
-    sed -i  "s/proband_placeholder/${proband_id1}/g" new_auto_config.yml
+    sed -i  "s:proband_placeholder:${proband_id1}:g" new_auto_config.yml
 
     # Printing (ls, see files; cat, injected values validation)
     ${params.debug_script}
