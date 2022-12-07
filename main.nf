@@ -98,7 +98,7 @@ if (params.hpo_file) hpo_ch = Channel.value(file(params.hpo_file))
 
 if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
-    container '151515151515/ped_parser_v2:'
+    container '151515151515/ped_parser_v2'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
     input:
     file family_file from ch_vcf
