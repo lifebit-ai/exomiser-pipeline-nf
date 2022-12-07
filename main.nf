@@ -98,7 +98,7 @@ if (params.hpo_file) hpo_ch = Channel.value(file(params.hpo_file))
 
 if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
-    container 'broadinstitute/gatk'
+    container 'quay.io/lifebitaiorg/docker-containers_ped_parser:1.0.0'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
     input:
     file family_file from ch_vcf
@@ -127,7 +127,7 @@ process exomiser {
   input:
   set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
   file "${proband_id1}-HPO.txt" from hpo_ch
-  file ped from ped_ch
+  file("${proband_id1}.ped") from ped_ch
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
@@ -149,7 +149,7 @@ process exomiser {
     def exomiser = "java -Xms2g -Xmx4g -jar "+"${exomiser_executable}"
     """
     echo "Contents in PED"
-    cat $ped
+    cat ${proband_id1}.ped
 
     # link the staged/downloaded data to predefined path
     ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
@@ -157,7 +157,7 @@ process exomiser {
 
     # Workaround for symlinked files not found
     HPO_TERMS=`cat ${proband_id1}-HPO.txt`
-
+    PED_FILE=`${proband_id1}.ped`
 
 
 
@@ -173,7 +173,7 @@ process exomiser {
     sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/g" new_auto_config.yml
     sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/g" new_auto_config.yml
     sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/g" new_auto_config.yml
-    sed -i  "s:ped_placeholder:${ped}:g" new_auto_config.yml
+    sed -i  "s/ped_placeholder/\$PED_FILE/g" new_auto_config.yml
     sed -i  "s/proband_placeholder/${proband_id1}/g" new_auto_config.yml
 
     # Printing (ls, see files; cat, injected values validation)
