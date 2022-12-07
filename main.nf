@@ -98,7 +98,7 @@ if (params.hpo_file) hpo_ch = Channel.value(file(params.hpo_file))
 
 if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
-    container '151515151515/ped_parser_v2'
+    container '151515151515/ped_parser_v2:'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
     input:
     file family_file from ch_vcf
@@ -157,7 +157,7 @@ process exomiser {
 
     # Workaround for symlinked files not found
     HPO_TERMS=`cat ${proband_id1}-HPO.txt`
-    PED_FILE=`${proband_id1}.ped`
+
 
 
 
@@ -173,7 +173,7 @@ process exomiser {
     sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/g" new_auto_config.yml
     sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/g" new_auto_config.yml
     sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/g" new_auto_config.yml
-    sed -i  "s/ped_placeholder/\$PED_FILE/g" new_auto_config.yml
+    sed -i  "s/ped_placeholder/${proband_id1}.ped/g" new_auto_config.yml
     sed -i  "s/proband_placeholder/${proband_id1}/g" new_auto_config.yml
 
     # Printing (ls, see files; cat, injected values validation)
