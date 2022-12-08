@@ -148,6 +148,7 @@ process exomiser {
     def exomiser_executable = "/exomiser/exomiser-cli-"+"${params.exomiser_version}"+".jar"
     def exomiser = "java -Xms2g -Xmx4g -jar "+"${exomiser_executable}"
     """
+    ls -la 
     echo "Contents in PED"
     cat ${proband_id1}.ped
 
