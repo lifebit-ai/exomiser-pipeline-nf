@@ -126,16 +126,12 @@ process exomiser {
 
   input:
   set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
-  file "${proband_id1}-HPO.txt" from hpo_ch
-  file("${proband_id1}.ped") from ped_ch
+  file "${proband_id1}-HPO.txt" from hpo_ch.collect()
+  file("${proband_id1}.ped") from ped_ch.collect()
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
   // this is fine, as when there is no second dir, a fake input.1 is generated that will be unused
-  file(application_properties) from ch_application_properties
-  file(auto_config_yml) from ch_auto_config_yml
-  file(exomiser_data) from ch_exomiser_data
-  each prioritiser from selected_prioritisers
 
   output:
   set file("*.html"),file("*.vcf"), file("*.json") optional true
