@@ -123,7 +123,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 process exomiser {
   tag "${vcf_path1}"
   publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
-
+  maxForks 50
   input:
   set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
   file "${proband_id1}-HPO.txt" from hpo_ch.collect()
