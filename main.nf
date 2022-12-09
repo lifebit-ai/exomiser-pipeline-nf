@@ -100,12 +100,15 @@ if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
     container 'quay.io/lifebitaiorg/ped_parser:latest'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
+    stageInMode 'copy'
     input:
-    file family_file from ch_vcf
-    file(ped_parser_py) from ch_ped_parser_py
+    set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
+    file family_file from ch_vcf.collect()
+    file(ped_parser_py) from ch_ped_parser_py.collect()
     output:
-    file "*-HPO.txt" into hpo_ch
-    file "*.ped" into ped_ch
+    file "${proband_id1}-HPO.txt" into hpo_ch
+    file "${proband_id1}.ped" into ped_ch
+    file "${vcf_path1}" into vcf_file_ch
     script:
     """
     python3 $ped_parser_py --input_family $family_file
@@ -125,9 +128,10 @@ process exomiser {
   publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
   maxForks 50
   input:
-  set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
-  file "${proband_id1}-HPO.txt" from hpo_ch
-  file "${proband_id1}.ped" from ped_ch
+  //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
+  file vcf_path1 from vcf_file_ch
+  file hpo_file from hpo_ch
+  file ped_file from ped_ch
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
@@ -150,23 +154,18 @@ process exomiser {
     """
     ls -la
     echo "Contents in PED"
-    cat ${proband_id1}.ped
 
     # link the staged/downloaded data to predefined path
     ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
-    cat ${proband_id1}.ped > input.ped
 
-    # Workaround for symlinked files not found
-    HPO_TERMS=`cat ${proband_id1}-HPO.txt`
-
-
-
+    proband_id1=`basename ${ped_file}`
+    echo \$proband_id1
 
     # Modify auto_config.to pass the params
     cp ${auto_config_yml} new_auto_config.yml
 
     # Swap placeholders with user provided values
-    sed -i "s/hpo_ids_placeholder/\$HPO_TERMS/g" new_auto_config.yml
+    sed -i "s/hpo_ids_placeholder/${hpo_file}/g" new_auto_config.yml
     sed -i "s/analysis_mode_placeholder/${params.analysis_mode}/g" new_auto_config.yml
     sed -i  "s/vcf_placeholder/${vcf_path1}/g" new_auto_config.yml
     sed -i  "s/output_prefix_placeholder/sample-${vcf_path1.simpleName}/g" new_auto_config.yml
@@ -174,8 +173,8 @@ process exomiser {
     sed -i  "s/min_priority_score_placeholder/${params.min_priority_score}/g" new_auto_config.yml
     sed -i  "s/keep_non_pathogenic_placeholder/${params.keep_non_pathogenic}/g" new_auto_config.yml
     sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/g" new_auto_config.yml
-    sed -i  "s/ped_placeholder/${proband_id1}.ped/g" new_auto_config.yml
-    sed -i  "s/proband_placeholder/${proband_id1}/g" new_auto_config.yml
+    sed -i  "s/ped_placeholder/${ped_file}/g" new_auto_config.yml
+    sed -i  "s/proband_placeholder/\$proband_id1/g" new_auto_config.yml
 
     # Printing (ls, see files; cat, injected values validation)
     ${params.debug_script}
