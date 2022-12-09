@@ -126,8 +126,8 @@ process exomiser {
   maxForks 50
   input:
   set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
-  file "${proband_id1}-HPO.txt" from hpo_ch.collect()
-  file("${proband_id1}.ped") from ped_ch.collect()
+  file "*-HPO.txt" from hpo_ch.collect()
+  file("*.ped") from ped_ch.collect()
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
@@ -148,7 +148,7 @@ process exomiser {
     def exomiser_executable = "/exomiser/exomiser-cli-"+"${params.exomiser_version}"+".jar"
     def exomiser = "java -Xms2g -Xmx4g -jar "+"${exomiser_executable}"
     """
-    ls -la 
+    ls -la
     echo "Contents in PED"
     cat ${proband_id1}.ped
 
