@@ -108,9 +108,11 @@ if(!params.ped_file & !params.hpo_file){
     output:
     file "${proband_id1}-HPO.txt" into hpo_ch
     file "${proband_id1}.ped" into ped_ch
-    file "${vcf_path1}" into vcf_file_ch
+    file "copy_${vcf_path1}" into vcf_file_ch
     script:
     """
+    ls -la
+    cp ${vcf_path1} copy_${vcf_path1}
     python3 $ped_parser_py --input_family $family_file
     """
   }
