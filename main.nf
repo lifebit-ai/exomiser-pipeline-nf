@@ -100,7 +100,6 @@ if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
     container 'quay.io/lifebitaiorg/ped_parser:latest'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
-    stageInMode 'copy'
     input:
     set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
     file family_file from ch_vcf.collect()
