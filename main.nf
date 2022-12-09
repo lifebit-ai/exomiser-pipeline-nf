@@ -100,6 +100,7 @@ if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
     container 'quay.io/lifebitaiorg/ped_parser:latest'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
+    stageInMode 'copy'
     input:
     set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
     file family_file from ch_vcf.collect()
@@ -107,11 +108,9 @@ if(!params.ped_file & !params.hpo_file){
     output:
     file "${proband_id1}-HPO.txt" into hpo_ch
     file "${proband_id1}.ped" into ped_ch
-    file "${vcf_path1.baseName}" into vcf_file_ch
+    file "${vcf_path1}" into vcf_file_ch
     script:
     """
-    ls -la
-    gunzip ${vcf_path1}
     python3 $ped_parser_py --input_family $family_file
     """
   }
@@ -155,18 +154,15 @@ process exomiser {
     """
     ls -la
     echo "Contents in PED"
-
     # link the staged/downloaded data to predefined path
     ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
-
     proband_id1=`basename ${ped_file}`
+    hpo_band1=`cat ${hpo_file}`
     echo \$proband_id1
-
     # Modify auto_config.to pass the params
     cp ${auto_config_yml} new_auto_config.yml
-
     # Swap placeholders with user provided values
-    sed -i "s/hpo_ids_placeholder/${hpo_file}/g" new_auto_config.yml
+    sed -i "s/hpo_ids_placeholder/\$hpo_band1/g" new_auto_config.yml
     sed -i "s/analysis_mode_placeholder/${params.analysis_mode}/g" new_auto_config.yml
     sed -i  "s/vcf_placeholder/${vcf_path1}/g" new_auto_config.yml
     sed -i  "s/output_prefix_placeholder/sample-${vcf_path1.simpleName}/g" new_auto_config.yml
@@ -176,22 +172,18 @@ process exomiser {
     sed -i  "s/pathogenicity_sources_placeholder/${params.pathogenicity_sources}/g" new_auto_config.yml
     sed -i  "s/ped_placeholder/${ped_file}/g" new_auto_config.yml
     sed -i  "s/proband_placeholder/\$proband_id1/g" new_auto_config.yml
-
     # Printing (ls, see files; cat, injected values validation)
     ${params.debug_script}
     cat new_auto_config.yml
-
     # Run Exomiser
     ${exomiser} \
     --analysis new_auto_config.yml \
     --spring.config.location=$application_properties \
     --exomiser.data-directory='.'
-
     # Create the slot for CloudOS html report preview
     mkdir MultiQC
     cp *.html MultiQC/multiqc_report.html
     sed -i  "s/Anonymous/\$proband_id1/" MultiQC/multiqc_report.html
-
     """
   }else{
     """
