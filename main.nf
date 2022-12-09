@@ -138,7 +138,7 @@ process exomiser {
   // this is fine, as when there is no second dir, a fake input.1 is generated that will be unused
   file(application_properties) from ch_application_properties
   file(auto_config_yml) from ch_auto_config_yml
-  file(exomiser_data) from ch_exomiser_data
+  //file(exomiser_data) from ch_exomiser_data
   each prioritiser from selected_prioritisers
 
   output:
@@ -156,7 +156,7 @@ process exomiser {
     echo "Contents in PED"
 
     # link the staged/downloaded data to predefined path
-    ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
+
 
     proband_id1=`basename ${ped_file}`
     echo \$proband_id1
