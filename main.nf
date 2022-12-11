@@ -108,6 +108,7 @@ if(!params.ped_file & !params.hpo_file){
     output:
     file "${proband_id1}-HPO.txt" into hpo_ch
     file "${proband_id1}.ped" into ped_ch
+    file "${proband_id1}_ID.txt" into id_ch
     file "${vcf_path1}" into vcf_file_ch
     script:
     """
@@ -132,6 +133,7 @@ process exomiser {
   file vcf_path1 from vcf_file_ch
   file hpo_file from hpo_ch
   file ped_file from ped_ch
+  file id_file from id _ch
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
@@ -156,7 +158,7 @@ process exomiser {
     echo "Contents in PED"
     # link the staged/downloaded data to predefined path
     ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
-    proband_id1=`basename ${ped_file}`
+    proband_id1=`cat ${id_file}`
     hpo_band1=`cat ${hpo_file}`
     echo \$proband_id1
     # Modify auto_config.to pass the params
