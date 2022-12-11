@@ -133,7 +133,7 @@ process exomiser {
   file vcf_path1 from vcf_file_ch
   file hpo_file from hpo_ch
   file ped_file from ped_ch
-  file id_file from id _ch
+  file id_file from id_ch
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
