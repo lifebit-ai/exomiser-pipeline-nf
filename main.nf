@@ -111,11 +111,11 @@ if(!params.ped_file & !params.hpo_file){
     file "${proband_id1}-HPO.txt" into hpo_ch
     file "${proband_id1}.ped" into ped_ch
     file "${proband_id1}_ID.txt" into id_ch
-    file "input.vcf.gz" into vcf_file_ch
+    file "input.vcf" into vcf_file_ch
     file "${vcf_index_path1}" into vcf_index_ch
     script:
     """
-    cp ${vcf_path1} input.vcf.gz
+    gunzip -c ${vcf_path1} > input.vcf
     python3 $ped_parser_py --input_family $family_file
     """
   }
