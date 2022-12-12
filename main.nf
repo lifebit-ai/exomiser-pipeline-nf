@@ -115,6 +115,7 @@ if(!params.ped_file & !params.hpo_file){
     file "${vcf_index_path1}" into vcf_index_ch
     script:
     """
+    cp ${vcf_path1} input.vcf.gz
     python3 $ped_parser_py --input_family $family_file
     """
   }
