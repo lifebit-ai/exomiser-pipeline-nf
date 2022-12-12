@@ -101,6 +101,8 @@ if(!params.ped_file & !params.hpo_file){
     container 'quay.io/lifebitaiorg/ped_parser:latest'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
     stageInMode 'copy'
+    errorStrategy 'retry'
+    maxErrors 5
     input:
     set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
     file family_file from ch_vcf.collect()
