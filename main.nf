@@ -110,6 +110,7 @@ if(!params.ped_file & !params.hpo_file){
     file "${proband_id1}.ped" into ped_ch
     file "${proband_id1}_ID.txt" into id_ch
     file "${vcf_path1}" into vcf_file_ch
+    file "${vcf_index_path1}" into vcf_index_ch
     script:
     """
     python3 $ped_parser_py --input_family $family_file
@@ -131,6 +132,7 @@ process exomiser {
   input:
   //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
   file vcf_path1 from vcf_file_ch
+  file vcf_index1 from vcf_index_ch
   file hpo_file from hpo_ch
   file ped_file from ped_ch
   file id_file from id_ch
