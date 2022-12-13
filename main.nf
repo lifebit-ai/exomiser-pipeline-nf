@@ -100,7 +100,6 @@ if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
     container 'quay.io/lifebitaiorg/ped_parser:latest'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
-    stageInMode 'copy'
     errorStrategy 'retry'
     maxErrors 5
     input:
@@ -108,14 +107,9 @@ if(!params.ped_file & !params.hpo_file){
     file family_file from ch_vcf.collect()
     file(ped_parser_py) from ch_ped_parser_py.collect()
     output:
-    file "${proband_id1}-HPO.txt" into hpo_ch
-    file "${proband_id1}.ped" into ped_ch
-    file "${proband_id1}_ID.txt" into id_ch
-    file "input.vcf" into vcf_file_ch
-    file "${vcf_index_path1}" into vcf_index_ch
+    tuple file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt"), file("${vcf_path1}"), file("${vcf_index_path1}") into exomiser_ch
     script:
     """
-    gunzip -c ${vcf_path1} > input.vcf
     python3 $ped_parser_py --input_family $family_file
     """
   }
@@ -134,18 +128,14 @@ process exomiser {
   maxForks 50
   input:
   //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
-  file vcf_path1 from vcf_file_ch
-  file vcf_index1 from vcf_index_ch
-  file hpo_file from hpo_ch
-  file ped_file from ped_ch
-  file id_file from id_ch
+  tuple file(hpo_file),file(ped_file),file(id_file),file(vcf_path1),file(vcf_index1) from exomiser_ch
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
   // this is fine, as when there is no second dir, a fake input.1 is generated that will be unused
-  file(application_properties) from ch_application_properties
-  file(auto_config_yml) from ch_auto_config_yml
-  file(exomiser_data) from ch_exomiser_data
+  each file(application_properties) from ch_application_properties
+  each file(auto_config_yml) from ch_auto_config_yml
+  each file(exomiser_data) from ch_exomiser_data
   each prioritiser from selected_prioritisers
 
   output:
