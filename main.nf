@@ -152,7 +152,7 @@ process exomiser {
     ls -la
     echo "Contents in PED"
     # link the staged/downloaded data to predefined path
-#    ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
+    ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
     proband_id1=`cat ${id_file}`
     hpo_band1=`cat ${hpo_file}`
     echo \$proband_id1
