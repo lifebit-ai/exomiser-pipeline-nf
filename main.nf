@@ -101,7 +101,6 @@ if(!params.ped_file & !params.hpo_file){
     container 'quay.io/lifebitaiorg/ped_parser:latest'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
     errorStrategy 'retry'
-    tag "${proband_id1}"
     maxErrors 5
     input:
     set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
@@ -124,11 +123,9 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 
 
 process exomiser {
-  tag "${id_file}"
+  tag "${vcf_path1}"
   publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
-  maxForks 50
-  errorStrategy 'retry'
-  maxErrors 2
+  maxForks 1
   input:
   //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
   tuple file(hpo_file),file(ped_file),file(id_file),file(vcf_path1),file(vcf_index1) from exomiser_ch
