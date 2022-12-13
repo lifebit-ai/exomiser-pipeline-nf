@@ -152,7 +152,7 @@ process exomiser {
     ls -la
     echo "Contents in PED"
     # link the staged/downloaded data to predefined path
-    ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
+#    ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
     proband_id1=`cat ${id_file}`
     hpo_band1=`cat ${hpo_file}`
     echo \$proband_id1
@@ -173,14 +173,14 @@ process exomiser {
     ${params.debug_script}
     cat new_auto_config.yml
     # Run Exomiser
-    ${exomiser} \
-    --analysis new_auto_config.yml \
-    --spring.config.location=$application_properties \
-    --exomiser.data-directory='.'
+    #${exomiser} \
+    #--analysis new_auto_config.yml \
+    #--spring.config.location=$application_properties \
+    #--exomiser.data-directory='.'
     # Create the slot for CloudOS html report preview
-    mkdir MultiQC
-    cp *.html MultiQC/multiqc_report.html
-    sed -i  "s/Anonymous/\$proband_id1/" MultiQC/multiqc_report.html
+    #mkdir MultiQC
+    #cp *.html MultiQC/multiqc_report.html
+    #sed -i  "s/Anonymous/\$proband_id1/" MultiQC/multiqc_report.html
     """
   }else{
     """
