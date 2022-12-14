@@ -125,7 +125,8 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 process exomiser {
   tag "${vcf_path1}"
   publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
-  maxForks 1
+  maxForks 2
+  submitRateLimit = '1 / 5 m'
   input:
   //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
   tuple file(hpo_file),file(ped_file),file(id_file),file(vcf_path1),file(vcf_index1) from exomiser_ch
