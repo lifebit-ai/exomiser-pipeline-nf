@@ -125,7 +125,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 process exomiser {
   tag "${vcf_path1}"
   publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
-  maxForks 2
+  maxForks 1
   submitRateLimit = '1 / 5 m'
   input:
   //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
@@ -174,14 +174,14 @@ process exomiser {
     ${params.debug_script}
     cat new_auto_config.yml
     # Run Exomiser
-    #${exomiser} \
-    #--analysis new_auto_config.yml \
-    #--spring.config.location=$application_properties \
-    #--exomiser.data-directory='.'
+    ${exomiser} \
+    --analysis new_auto_config.yml \
+    --spring.config.location=$application_properties \
+    --exomiser.data-directory='.'
     # Create the slot for CloudOS html report preview
-    #mkdir MultiQC
-    #cp *.html MultiQC/multiqc_report.html
-    #sed -i  "s/Anonymous/\$proband_id1/" MultiQC/multiqc_report.html
+    mkdir MultiQC
+    cp *.html MultiQC/multiqc_report.html
+    sed -i  "s/Anonymous/\$proband_id1/" MultiQC/multiqc_report.html
     """
   }else{
     """
