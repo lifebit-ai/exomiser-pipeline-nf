@@ -111,6 +111,7 @@ if(!params.ped_file & !params.hpo_file){
     script:
     """
     python3 $ped_parser_py --input_family $family_file
+    sed -i 's/nan/0/g' ${proband_id1}.ped
     """
   }
 }
