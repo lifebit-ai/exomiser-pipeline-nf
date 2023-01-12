@@ -157,6 +157,9 @@ process exomiser {
     echo "Contents in PED"
     # link the staged/downloaded data to predefined path
     ln -svf "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
+    stat -Lc $vcf_path1
+    stat -Lc $vcf_path1 > out.txt
+    cat out.txt
     proband_id1=`cat ${id_file}`
     hpo_band1=`cat ${hpo_file}`
     echo \$proband_id1
