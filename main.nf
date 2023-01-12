@@ -184,6 +184,7 @@ process exomiser {
     # Create the slot for CloudOS html report preview
     mkdir MultiQC
     cp *.html MultiQC/multiqc_report.html
+    rm -fr /data/exomiser-data-bundle
     sed -i  "s/Anonymous/\$proband_id1/" MultiQC/multiqc_report.html
     """
   }else{
