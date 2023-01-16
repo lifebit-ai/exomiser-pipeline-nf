@@ -58,8 +58,10 @@ Channel
     .fromPath(params.families_file)
     .ifEmpty { exit 1, "Cannot find input file : ${params.families_file}" }
     .splitCsv(header:true, sep:'\t', strip: true)
-    .map {row -> [ row.run_id, row.proband_id, row.hpo, file(row.vcf_path), file(row.vcf_index_path), row.proband_sex, row.mother_id, row.father_id ] }
-    .set {ch_input}
+    .map {row -> [ row.proband_id, row.hpo, file(row.vcf_path), file(row.vcf_index_path)] }
+    .set {ch_input1}
+
+ch_input1.into { ch_input; ch_input2 }
 
 // Conditional creation of channels, custom if provided else default from bin/
 projectDir = workflow.projectDir
@@ -103,11 +105,11 @@ if(!params.ped_file & !params.hpo_file){
     errorStrategy 'retry'
     maxErrors 5
     input:
-    set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
+    set proband_id1, hpo, file(vcf_path1), file(vcf_index_path1) from ch_input
     file family_file from ch_vcf.collect()
     file(ped_parser_py) from ch_ped_parser_py.collect()
     output:
-    tuple file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt"), file("${vcf_path1}"), file("${vcf_index_path1}") into exomiser_ch
+    tuple val(proband_id1), file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt") into join_ch
     script:
     """
     python3 $ped_parser_py --input_family $family_file
@@ -115,6 +117,13 @@ if(!params.ped_file & !params.hpo_file){
     """
   }
 }
+
+/*--------------------------------------------------
+  Run containarised Exomiser
+---------------------------------------------------*/
+
+
+combined_channel = ch_input2.join(join_ch, by: 0).view()
 
 /*--------------------------------------------------
   Run containarised Exomiser
@@ -132,7 +141,8 @@ process exomiser {
   maxRetries 3
   input:
   //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
-  tuple file(hpo_file),file(ped_file),file(id_file),file(vcf_path1),file(vcf_index1) from exomiser_ch
+  //set val(proband_id1), hpo, file(vcf_path1), file(vcf_index_path1)
+  set file(vcf_path1),file(vcf_index1), val(proband_id1), file(hpo_file),file(ped_file),file(id_file) from combined_channel
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
