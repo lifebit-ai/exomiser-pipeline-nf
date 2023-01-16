@@ -58,7 +58,7 @@ Channel
     .fromPath(params.families_file)
     .ifEmpty { exit 1, "Cannot find input file : ${params.families_file}" }
     .splitCsv(header:true, sep:'\t', strip: true)
-    .map {row -> [ row.proband_id, row.hpo, file(row.vcf_path), file(row.vcf_index_path)] }
+    .map {row -> [ row.proband_id, file(row.vcf_path), file(row.vcf_index_path)] }
     .set {ch_input1}
 
 ch_input1.into { ch_input; ch_input2 }
@@ -132,6 +132,7 @@ combined_channel = ch_input2.join(join_ch, by: 0).view()
 ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 
 
+
 process exomiser {
   tag "${vcf_path1}"
   publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
@@ -142,7 +143,7 @@ process exomiser {
   input:
   //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
   //set val(proband_id1), hpo, file(vcf_path1), file(vcf_index_path1)
-  set file(vcf_path1),file(vcf_index1), val(proband_id1), file(hpo_file),file(ped_file),file(id_file) from combined_channel
+  set val(proband_id1),file(vcf_path1),file(vcf_index1), file(hpo_file), file(ped_file),file(id_file) from combined_channel
   //The following is expected when CADD is omitted,
   // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
   // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
@@ -166,7 +167,7 @@ process exomiser {
     ls -la
     echo "Contents in PED"
     # link the staged/downloaded data to predefined path
-    ln -svf "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
+    ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
     stat -L $vcf_path1
     stat -L $vcf_path1 > out.txt
     cat out.txt
