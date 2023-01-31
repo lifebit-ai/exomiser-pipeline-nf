@@ -4,7 +4,7 @@
 
 ### Containarizing Exomiser
 
-Containarization provides a solution to isolate all software dependencies and make an aplication / workflow  reproducible.
+Containarization provides a solution to isolate all software dependencies and make an application/workflow  reproducible.
 
 In order to containirize Exomiser we started from a Docker base image with Ubuntu and Java8, which is the main dependency for Exomiser to be able to run.
 
