@@ -114,6 +114,16 @@ if(!params.ped_file & !params.hpo_file){
     """
     python3 $ped_parser_py --input_family $family_file
     sed -i 's/nan/0/g' ${proband_id1}.ped
+    echo "DEBUG: Check the file before - Content"
+    cat ${proband_id1}.ped
+    echo "DEBUG: Check the file before - Number of line"
+    wc -l ${proband_id1}.ped
+    # remove the last line when nan present
+    head -n -1 ${proband_id1}.ped > temp.txt ; mv temp.txt ${proband_id1}.ped
+    echo "DEBUG: Check the file after - Content"
+    cat ${proband_id1}.ped
+    echo "DEBUG: Check the file after - Number of line"
+    wc -l ${proband_id1}.ped
     """
   }
 }
