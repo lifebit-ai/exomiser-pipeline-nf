@@ -130,6 +130,8 @@ process exomiser {
     def exomiser = "java -Xms2g -Xmx4g -jar "+"${exomiser_executable}"
     """
     # link the staged/downloaded data to predefined path
+    mkdir -p /data
+    mkdir -p /data/exomiser-data-bundle
     ln -s "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
 
     ls -l
