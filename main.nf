@@ -177,6 +177,8 @@ process exomiser {
     ls -la
     echo "Contents in PED"
     # link the staged/downloaded data to predefined path
+    mkdir -p /data
+    mkdir -p /data/exomiser-data-bundle
     ln -svf "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
     stat -L $vcf_path1
     stat -L $vcf_path1 > out.txt
