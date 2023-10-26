@@ -44,7 +44,7 @@ log.info ""
 // ---------------------------------------------------*/
 
 if(params.families_file) {
-   Channel
+  Channel
       .fromPath( "${params.families_file}")
       .ifEmpty { exit 1, "Family file: ${params.families_file} not found"}
       .set {ch_vcf}
@@ -88,7 +88,6 @@ selected_analysis_mode = params.analysis_mode.split(',').collect{it.trim()}
 if (!checkParameterList(selected_analysis_mode, analysisModesList)) exit 1, "Unknown analysis mode, the available options are:\n$analysisModesList"
 
 ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
-ch_ped_parser_py = Channel.fromPath("${params.ped_parser_py}")
 /*--------------------------------------------------
   Create PED and HPO file from design
 ---------------------------------------------------*/
@@ -107,22 +106,21 @@ if(!params.ped_file & !params.hpo_file){
     input:
     set proband_id1, hpo, file(vcf_path1), file(vcf_index_path1) from ch_input
     file family_file from ch_vcf.collect()
-    file(ped_parser_py) from ch_ped_parser_py.collect()
     output:
     tuple val(proband_id1), file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt") into join_ch
     script:
     """
-    python3 $ped_parser_py --input_family $family_file
+    ped_module.py --input_family $family_file
     sed -i 's/nan/0/g' ${proband_id1}.ped
-    echo "DEBUG: Check the file before - Content"
+    #echo "DEBUG: Check the file before - Content"
     cat ${proband_id1}.ped
-    echo "DEBUG: Check the file before - Number of line"
+    #echo "DEBUG: Check the file before - Number of line"
     wc -l ${proband_id1}.ped
     # remove the last line when nan present
     head -n -1 ${proband_id1}.ped > temp.txt ; mv temp.txt ${proband_id1}.ped
-    echo "DEBUG: Check the file after - Content"
+    #echo "DEBUG: Check the file after - Content"
     cat ${proband_id1}.ped
-    echo "DEBUG: Check the file after - Number of line"
+    #echo "DEBUG: Check the file after - Number of line"
     wc -l ${proband_id1}.ped
     """
   }
