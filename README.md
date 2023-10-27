@@ -61,7 +61,7 @@ This is a file needed by exomiser to run. It contains placeholders in the text t
 
 ### --exomiser_data
 
-This path refers to the reference data bundle needed by exomiser (~120 GB!). A copy of such files can be found [here](s3://lifebit-featured-datasets/pipelines/exomiser-data-bundle). The reference dataset has been added as a parameter, allowing flexibility to pull the data from any resource (i.e. cloud, local storage, ftp, ...) and Nextlfow will automatically take care of fetching the data without having to add anything to the pipeline itself.
+This path refers to the reference data bundle needed by exomiser (~120 GB!). A copy of such files can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-data-bundle/) . The reference dataset has been added as a parameter, allowing flexibility to pull the data from any resource (i.e. cloud, local storage, ftp, ...) and Nextlfow will automatically take care of fetching the data without having to add anything to the pipeline itself.
 
 There are other parameters that can be tweaked to personalize the behaviour of the pipeline. These are referenced in `nextflow.config`
 
