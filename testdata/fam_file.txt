@@ -1,2 +1,0 @@
-run_id	proband_id	hpo	vcf_path	vcf_index_path	proband_sex	mother_id	father_id
-EX001	ERR3239334	HP:0001156	s3://lifebit-featured-datasets/pipelines/exomiser-nf/family_ERR3239334_ERR3989341_ERR3989342_small.vcf.gz	s3://lifebit-featured-datasets/pipelines/exomiser-nf/family_ERR3239334_ERR3989341_ERR3989342_small.vcf.gz.tbi	M	ERR3989342	ERR3989341
