@@ -95,10 +95,10 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 
 //remove
 //ch_vcf_inspect.dump(tag:'ch_vcf')
-if (params.ped_file) ped_ch = Channel.value(file(params.ped_file))
-if (params.hpo_file) hpo_ch = Channel.value(file(params.hpo_file))
+// if (params.ped_file) ped_ch = Channel.value(file(params.ped_file))
+// if (params.hpo_file) hpo_ch = Channel.value(file(params.hpo_file))
 
-if(!params.ped_file & !params.hpo_file){
+// if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
     container 'quay.io/lifebitaiorg/ped_parser:latest'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
@@ -118,7 +118,7 @@ if(!params.ped_file & !params.hpo_file){
     sed -i "/0\t0\t0/d"  ${proband_id1}.ped
     """
   }
-}
+// }
 
 /*--------------------------------------------------
   Run containarised Exomiser
