@@ -21,6 +21,7 @@ log.info "-${c_teal}config:${c_reset}- ${params.config}"
 log.info "-${c_teal}filename_design_file:${c_reset}- ${params.families_file}"
 if(params.hpo_file) log.info "-${c_teal}filename_hpo:${c_reset}- ${params.filename_hpo}"
 if(params.ped_file) log.info "-${c_teal}filename_ped:${c_reset}- ${params.ped_file}"
+if(params.families_file) log.info "-${c_teal}families_file:${c_reset}- ${params.families_file}"
 log.info "-${c_teal}analysis_mode:${c_reset}- ${params.analysis_mode}"
 log.info "-${c_teal}exomiser_data:${c_reset}- ${params.exomiser_data}"
 log.info "-${c_teal}exomiser_phenotype_data:${c_reset}- ${params.exomiser_phenotype_data}"
@@ -49,7 +50,7 @@ if(params.families_file) {
       .ifEmpty { exit 1, "Family file: ${params.families_file} not found"}
       .set {ch_vcf}
 } else {
-  exit 1, "please specify Family file with --family_file parameter"
+  exit 1, "please specify Family file with --families_file parameter"
 }
 
 
@@ -104,24 +105,17 @@ if(!params.ped_file & !params.hpo_file){
     errorStrategy 'retry'
     maxErrors 5
     input:
-    set proband_id1, hpo, file(vcf_path1), file(vcf_index_path1) from ch_input
+    set proband_id1, file(vcf_path1), file(vcf_index_path1) from ch_input
     file family_file from ch_vcf.collect()
     output:
     tuple val(proband_id1), file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt") into join_ch
     script:
     """
     ped_module.py --input_family $family_file
+    #to change nan in 0s if there are any 
     sed -i 's/nan/0/g' ${proband_id1}.ped
-    #echo "DEBUG: Check the file before - Content"
-    cat ${proband_id1}.ped
-    #echo "DEBUG: Check the file before - Number of line"
-    wc -l ${proband_id1}.ped
-    # remove the last line when nan present
-    head -n -1 ${proband_id1}.ped > temp.txt ; mv temp.txt ${proband_id1}.ped
-    #echo "DEBUG: Check the file after - Content"
-    cat ${proband_id1}.ped
-    #echo "DEBUG: Check the file after - Number of line"
-    wc -l ${proband_id1}.ped
+    #to remove the "parent" line if it's a single sample
+    sed -i "/0\t0\t0/d"  ${proband_id1}.ped
     """
   }
 }
@@ -149,13 +143,7 @@ process exomiser {
   errorStrategy 'retry'
   maxRetries 3
   input:
-  //set run_id, proband_id1, hpo, file(vcf_path1), file(vcf_index_path1), proband_sex, mother_id, father_id from ch_input
-  //set val(proband_id1), hpo, file(vcf_path1), file(vcf_index_path1)
   set val(proband_id1),file(vcf_path1),file(vcf_index1), file(hpo_file), file(ped_file),file(id_file) from combined_channel
-  //The following is expected when CADD is omitted,
-  // WARN: Input tuple does not match input set cardinality declared by process `exomiser`
-  // ch_all_exomiser_data contents can be 1 or 2 folders, (exomiser_data +/- cadd separately)
-  // this is fine, as when there is no second dir, a fake input.1 is generated that will be unused
   each file(application_properties) from ch_application_properties
   each file(auto_config_yml) from ch_auto_config_yml
   each file(exomiser_data) from ch_exomiser_data
@@ -172,18 +160,18 @@ process exomiser {
     def exomiser_executable = "/exomiser/exomiser-cli-"+"${params.exomiser_version}"+".jar"
     def exomiser = "java -Xms2g -Xmx4g -jar "+"${exomiser_executable}"
     """
-    ls -la
-    echo "Contents in PED"
+    #ls -la
+    #echo "Contents in PED"
     # link the staged/downloaded data to predefined path
     mkdir -p /data
     mkdir -p /data/exomiser-data-bundle
     ln -svf "\$PWD/$exomiser_data/" /data/exomiser-data-bundle
-    stat -L $vcf_path1
+    #stat -L $vcf_path1
     stat -L $vcf_path1 > out.txt
-    cat out.txt
+    #cat out.txt
     proband_id1=`cat ${id_file}`
     hpo_band1=`cat ${hpo_file}`
-    echo \$proband_id1
+    #echo \$proband_id1
     # Modify auto_config.to pass the params
     cp ${auto_config_yml} new_auto_config.yml
     # Swap placeholders with user provided values
@@ -198,8 +186,8 @@ process exomiser {
     sed -i  "s/ped_placeholder/${ped_file}/g" new_auto_config.yml
     sed -i  "s/proband_placeholder/\$proband_id1/g" new_auto_config.yml
     # Printing (ls, see files; cat, injected values validation)
-    ${params.debug_script}
-    cat new_auto_config.yml
+    #${params.debug_script}
+    #cat new_auto_config.yml
     # Run Exomiser
     ${exomiser} \
     --analysis new_auto_config.yml \
