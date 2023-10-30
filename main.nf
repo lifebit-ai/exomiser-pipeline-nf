@@ -100,7 +100,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 
 // if(!params.ped_file & !params.hpo_file){
   process ped_hpo_creation {
-    container 'quay.io/lifebitaiorg/ped_parser:latest'
+    container 'quay.io/lifebitaiorg/ped_parser:1.6.6'
     publishDir "${params.outdir}/familyfile/", mode: 'copy'
     errorStrategy 'retry'
     maxErrors 5
