@@ -49,7 +49,7 @@ if(params.families_file) {
   Channel
       .fromPath( "${params.families_file}")
       .ifEmpty { exit 1, "Family file: ${params.families_file} not found"}
-      .set {ch_vcf}
+      .set {ch_families_file}
 } else {
   exit 1, "please specify Family file with --families_file parameter"
 }
@@ -61,9 +61,7 @@ Channel
     .ifEmpty { exit 1, "Cannot find input file : ${params.families_file}" }
     .splitCsv(header:true, sep:'\t', strip: true)
     .map {row -> [ row.proband_id, file(row.vcf_path), file(row.vcf_index_path)] }
-    .set {ch_input1}
-
-ch_input1.into { ch_input; ch_input2 }
+    .into {ch_vcf_paths; ch_vcf_paths2}
 
 // Conditional creation of channels, custom if provided else default from bin/
 projectDir = workflow.projectDir
@@ -103,10 +101,10 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
     errorStrategy 'retry'
     maxErrors 5
     input:
-    set proband_id1, file(vcf_path1), file(vcf_index_path1) from ch_input
+    set proband_id1, file(vcf_path1), file(vcf_index_path1) from ch_vcf_paths
     file family_file from ch_vcf.collect()
     output:
-    tuple val(proband_id1), file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt") into join_ch
+    tuple val(proband_id1), file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt") into ch_to_join
     script:
     """
     ped_module.py --input_family $family_file
@@ -123,7 +121,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 ---------------------------------------------------*/
 
 
-combined_channel = ch_input2.join(join_ch, by: 0).view()
+ch_combined = ch_vcf_paths2.join(ch_to_join, by: 0).view()
 
 /*--------------------------------------------------
   Run containarised Exomiser
@@ -141,7 +139,7 @@ process exomiser {
   errorStrategy 'retry'
   maxRetries 3
   input:
-  set val(proband_id1),file(vcf_path1),file(vcf_index1), file(hpo_file), file(ped_file),file(id_file) from combined_channel
+  set val(proband_id1),file(vcf_path1),file(vcf_index1), file(hpo_file), file(ped_file),file(id_file) from ch_combined
   each file(application_properties) from ch_application_properties
   each file(auto_config_yml) from ch_auto_config_yml
   each file(exomiser_data) from ch_exomiser_data
