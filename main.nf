@@ -1,5 +1,6 @@
 #!/usr/bin/env nextflow
-import groovy.json.*
+import groovy.
+on.*
 
 /*
 ========================================================================================
@@ -69,9 +70,6 @@ projectDir = workflow.projectDir
 ch_application_properties = params.application_properties ? Channel.value(file(params.application_properties)) : Channel.fromPath("${projectDir}/bin/application.properties")
 ch_auto_config_yml = params.auto_config_yml ? Channel.value(file(params.auto_config_yml)) : Channel.fromPath("${projectDir}/bin/auto_config.yml")
 
-// Stage scripts from bin
-ch_add_exomiser_fields_script = Channel.value(file("${projectDir}/bin/add_exomiser_fields_to_genotiers.js"))
-ch_get_hpo_terms_script = Channel.value(file("${projectDir}/bin/get_hpo_terms_from_barcode.js"))
 
 // set exomiser specific flags
 pathogenicitySourcesList= definePathogenicitySources()
