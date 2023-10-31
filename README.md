@@ -77,6 +77,19 @@ Here is the list of steps performed by this pipeline.
 - the autoconfig file, for reproducibility purpose
 - a vcf file with the called variants that are identified as causative
 
+### Usage
+
+The pipeline can be run like:
+
+```
+nextflow run main.nf --families_file 's3://lifebit-featured-datasets/pipelines/exomiser-nf/fam_file.tsv' \
+        --hpo_terms_file 's3://lifebit-featured-datasets/pipelines/exomiser-nf/hpo_terms_file.txt' \
+        --prioritisers 'hiPhivePrioritiser' \
+        --exomiser_data 's3://lifebit-featured-datasets/pipelines/exomiser-data-bundle' \
+        --application_properties 's3://lifebit-featured-datasets/pipelines/exomiser-nf/application.properties' \
+        --auto_config_yml 's3://lifebit-featured-datasets/pipelines/exomiser-nf/auto_config.yml'
+```
+
 ### Testing
 
 To run the pipeline with `docker` (used by default), type the following commands:
