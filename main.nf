@@ -135,10 +135,7 @@ process exomiser {
   tag "${vcf_path1}"
   publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
   publishDir "${params.outdir}/", mode: 'copy', pattern: "MultiQC/multiqc_report.html"
-  maxForks 1
-  submitRateLimit = '1 / 5 m'
-  errorStrategy 'retry'
-  maxRetries 3
+
   input:
   set val(proband_id1),file(vcf_path1),file(vcf_index1), file(hpo_file), file(ped_file),file(id_file) from ch_combined
   each file(application_properties) from ch_application_properties
