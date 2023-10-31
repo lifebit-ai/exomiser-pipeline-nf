@@ -102,7 +102,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
     maxErrors 5
     input:
     set proband_id1, file(vcf_path1), file(vcf_index_path1) from ch_vcf_paths
-    file family_file from ch_vcf.collect()
+    file family_file from ch_families_file.collect()
     output:
     tuple val(proband_id1), file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt") into ch_to_join
     script:
