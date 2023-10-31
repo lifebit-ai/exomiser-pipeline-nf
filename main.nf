@@ -134,6 +134,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
 process exomiser {
   tag "${vcf_path1}"
   publishDir "${params.outdir}/${proband_id1}", mode: 'copy'
+  publishDir "${params.outdir}/", mode: 'copy', pattern: "MultiQC/multiqc_report.html"
   maxForks 1
   submitRateLimit = '1 / 5 m'
   errorStrategy 'retry'
