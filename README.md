@@ -83,7 +83,6 @@ The pipeline can be run like:
 
 ```
 nextflow run main.nf --families_file 's3://lifebit-featured-datasets/pipelines/exomiser-nf/fam_file.tsv' \
-        --hpo_terms_file 's3://lifebit-featured-datasets/pipelines/exomiser-nf/hpo_terms_file.txt' \
         --prioritisers 'hiPhivePrioritiser' \
         --exomiser_data 's3://lifebit-featured-datasets/pipelines/exomiser-data-bundle' \
         --application_properties 's3://lifebit-featured-datasets/pipelines/exomiser-nf/application.properties' \
