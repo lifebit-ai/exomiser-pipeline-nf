@@ -196,6 +196,7 @@ process exomiser {
     cp *.html MultiQC/multiqc_report.html
 
     sed -i  "s/Anonymous/\$proband_id1/" MultiQC/multiqc_report.html
+
     """
   }else{
     """
