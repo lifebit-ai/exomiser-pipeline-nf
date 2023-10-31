@@ -1,4 +1,5 @@
-# Exomiser 
+# Exomiser
+
 ## Pipeline documentation
 
 Table of contents
@@ -7,7 +8,7 @@ Table of contents
   - [Pipeline description](#pipeline-description)
     - [Pipeline overview](#pipeline-overview)
     - [Input](#input)
-      - [--\<name\_of\_main\_input\>](#--name_of_main_input)
+      - [--\<name_of_main_input\>](#--name_of_main_input)
     - [Processes](#processes)
     - [Output](#output)
   - [Options](#options)
@@ -24,19 +25,17 @@ Table of contents
 
 ### Pipeline overview
 
-  - Name: exomiser-pipeline-nf
-  - Tools: exomiser
-  - Version: 12.1.0 
+- Name: exomiser-pipeline-nf
+- Tools: exomiser
+- Version: 12.1.0
 
-It is a fully containerised nextflow pipeline that runs exomisers on either a single sample VCF file or a trio VCF file. 
+It is a fully containerised nextflow pipeline that runs exomisers on either a single sample VCF file or a trio VCF file.
 
 The Exomiser is a tool to perform genome-wide prioritisation of genomic variants including non-coding and regulatory variants using patient phenotypes as a means of differentiating candidate genes.
- 
-To perform an analysis, Exomiser requires the patient's genome/exome in VCF format and their phenotype encoded in [HPO terms](https://hpo.jax.org/app/). The exomiser is also capable of analysing trios/small family genomes. 
 
+To perform an analysis, Exomiser requires the patient's genome/exome in VCF format and their phenotype encoded in [HPO terms](https://hpo.jax.org/app/). The exomiser is also capable of analysing trios/small family genomes.
 
 The main input of the pipeline (`families_file`) is a TSV file and the main output of the pipeline is an HTML file containing pathogenicity score of the called variants.
-
 
 ### Input
 
@@ -44,9 +43,9 @@ The main input of the pipeline (`families_file`) is a TSV file and the main outp
 
 This is a TSV file that contains the following info tab separated
 
-|run_id	|proband_id	|hpo	|vcf_path	|vcf_index_path	|proband_sex	|mother_id	|father_id  |
-| :----: | :----: | :----: | :----: | :----: | :----: | :----: | :----: |
-| | | | | | | | | |
+| run_id | proband_id | hpo | vcf_path | vcf_index_path | proband_sex | mother_id | father_id |
+| :----: | :--------: | :-: | :------: | :------------: | :---------: | :-------: | :-------: | --- |
+|        |            |     |          |                |             |           |           |     |
 
 The vcf_path column can contain the path to either a multiVCF(trio) or a single-sample VCF.
 In the case of a single-sample VCF, the last 2 columns must contain `nan` as a value. An example can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-nf/fam_file.tsv)
@@ -67,17 +66,16 @@ There are other parameters that can be tweaked to personalize the behaviour of t
 
 ### Processes
 
-Here is the list of steps performed by this pipeline. 
+Here is the list of steps performed by this pipeline.
 
 1. `process ped_hpo_creation` - this process produces the pedigree (PED) file needed for exomiser to run using a python script.
-2. `process 2` - this process is where the autoconfig file for exomiser is generated and exomiser is run. 
- 
+2. `process 2` - this process is where the autoconfig file for exomiser is generated and exomiser is run.
+
 ### Output
 
-- a html and a  json file containing a report on the analysis
+- a html and a json file containing a report on the analysis
 - the autoconfig file, for reproducibility purpose
 - a vcf file with the called variants that are identified as causative
-
 
 ### Testing
 
@@ -99,12 +97,9 @@ Be careful when running this, as the pipeline requires the staging of 120 GB of 
 
 ### Running on CloudOS
 
-
 ### Profiles
 
-| profile name   | Run locally  | Run on CloudOS  | description |
-| :----: | :----: | :----: | :----: |
-|family_test   | the data required is so big, it was tested on a c5.4xlarge EC2 machine |     | this test is designed to test the pipeine on a multi-VCF with trio information |
-|single_vcf_test | the data required is so big, it was tested on a c5.4xlarge EC2 machine |     | this test is designed to test the pipeine on a single-sample-VCF |
-
-
+|  profile name   |                              Run locally                               | Run on CloudOS |                                   description                                   |
+| :-------------: | :--------------------------------------------------------------------: | :------------: | :-----------------------------------------------------------------------------: |
+|   test_family   | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   | this test is designed to test the pipeline on a multi-VCF with trio information |
+| test_single_vcf | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   |        this test is designed to test the pipeline on a single-sample-VCF        |
