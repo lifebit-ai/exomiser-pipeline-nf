@@ -107,7 +107,7 @@ ch_exomiser_data = Channel.fromPath("${params.exomiser_data}")
     tuple val(proband_id1), file("${proband_id1}-HPO.txt"), file("${proband_id1}.ped"), file("${proband_id1}_ID.txt") into ch_to_join
     script:
     """
-    ped_module.py --input_family $family_file
+    ped_module.py --input_family ${family_file}
     #to change nan in 0s if there are any 
     sed -i 's/nan/0/g' ${proband_id1}.ped
     #to remove the "parent" line if it's a single sample
