@@ -44,11 +44,13 @@ The main input of the pipeline (`families_file`) is a TSV file and the main outp
 This is a TSV file that contains the following info tab separated
 
 | run_id | proband_id | hpo | vcf_path | vcf_index_path | proband_sex | mother_id | father_id |
-| :----: | :--------: | :-: | :------: | :------------: | :---------: | :-------: | :-------: | --- |
-|        |            |     |          |                |             |           |           |     |
+| :----: | :--------: | :-: | :------: | :------------: | :---------: | :-------: | :-------: |
+|        |            |     |          |                |             |           |           |
 
 The vcf_path column can contain the path to either a multiVCF(trio) or a single-sample VCF.
 In the case of a single-sample VCF, the last 2 columns must contain `nan` as a value. An example can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-nf/fam_file.tsv)
+
+In the hpo column, multiple comma-separated HPO terms can be present.
 
 ### --application_properties
 
@@ -69,7 +71,7 @@ There are other parameters that can be tweaked to personalize the behaviour of t
 Here is the list of steps performed by this pipeline.
 
 1. `process ped_hpo_creation` - this process produces the pedigree (PED) file needed for exomiser to run using a python script.
-2. `process 2` - this process is where the autoconfig file for exomiser is generated and exomiser is run.
+2. `process exomiser` - this process is where the autoconfig file for exomiser is generated and exomiser is run.
 
 ### Output
 

@@ -18,6 +18,7 @@ nextflow_schema.json
 *fq
 **/2102_*
 exo
+*.mt/*
 
 // Ignore node modules
 bin/node_modules/
