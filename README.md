@@ -1,54 +1,119 @@
-# Exomiser 
+# Exomiser
 
-## Exomiser -> container -> pipeline -> Run at your peril
+## Pipeline documentation
 
-### Containarizing Exomiser
+Table of contents
 
-Containarization provides a solution to isolate all software dependencies and make an aplication / workflow  reproducible.
+- [Pipeline documentation](#pipeline-documentation)
+  - [Pipeline description](#pipeline-description)
+    - [Pipeline overview](#pipeline-overview)
+    - [Input](#input)
+      - [--\<name_of_main_input\>](#--name_of_main_input)
+    - [Processes](#processes)
+    - [Output](#output)
+  - [Options](#options)
+    - [General Options](#general-options)
+    - [Resource Allocation](#resource-allocation)
+  - [Usage](#usage)
+    - [Running with Docker or Singularity](#running-with-docker-or-singularity)
+    - [Running on CloudOS](#running-on-cloudos)
+  - [Testing](#testing)
+    - [Profiles](#profiles)
+    - [Stress Testing](#stress-testing)
 
-In order to containirize Exomiser we started from a Docker base image with Ubuntu and Java8, which is the main dependency for Exomiser to be able to run.
+## Pipeline description
 
-The container pulls the latest publicly available release of `Exomiser v12.0.0` from Github releases, and unzips it inside the container. Modifications to the application property are included to match the genome reference data used for running exomiser. The version selecter for the container is `1811`.
+### Pipeline overview
 
-Latest version of exomiser accept parameters and configuration from a YAML file. This YAML file defines input such as VCF files, reference genome version, HPO terms and other parameter configuration. In order to create a directly executable application for Exomiser, without the need to write beforehand the YAML file, we added a `Python` handle script that just do that.
+- Name: exomiser-pipeline-nf
+- Tools: exomiser
+- Version: 12.1.0
 
-The `Python` script `run.py` takes care of:
-* Getting Exomiser input parameters from command line
-* Create a YAML file from a template and updating it given parameters received
-* Run Exomiser with the YAML file just created
+It is a fully containerised nextflow pipeline that runs exomisers on either a single sample VCF file or a trio VCF file.
 
-The script also takes care of handling the pointer to the genome reference dataset used for running Exomiser. 
+The Exomiser is a tool to perform genome-wide prioritisation of genomic variants including non-coding and regulatory variants using patient phenotypes as a means of differentiating candidate genes.
 
-Since reference data is quite large, doesn't make much sense to include it in the container, as it would turn into a +50 GB image...
+To perform an analysis, Exomiser requires the patient's genome/exome in VCF format and their phenotype encoded in [HPO terms](https://hpo.jax.org/app/). The exomiser is also capable of analysing trios/small family genomes.
 
-Instead the fetching of the data, which includes:
-* VCF
-* Reference Exomiser genome dataset
+The main input of the pipeline (`families_file`) is a TSV file and the main output of the pipeline is an HTML file containing pathogenicity score of the called variants.
 
-Will be taken care by a simple Nextflow pipeline.
+### Input
 
-## Containarized Exomiser pipeline
+#### --families_file
 
-In order to run Exomiser with a VCF file, reference genome datasets have to be fetched and unzipped for Exomiser to run. We separated the data and file staging part from the container into a pipeline (Nextflow) which will take care of pulling the data into the working directory for Exomiser to run successfully.
+This is a TSV file that contains the following info tab separated
 
-The reference dataset has been added as a parameter, allowing flexibility to pull the data from any resource (i.e. cloud, local storage, ftp, ...) and Nextlfow pipeline will automatically take care of fetching the data without having to add any logic to Exomiser process/script.
+| run_id | proband_id | hpo | vcf_path | vcf_index_path | proband_sex | mother_id | father_id |
+| :----: | :--------: | :-: | :------: | :------------: | :---------: | :-------: | :-------: |
+|        |            |     |          |                |             |           |           |
 
+The vcf_path column can contain the path to either a multiVCF(trio) or a single-sample VCF.
+In the case of a single-sample VCF, the last 2 columns must contain `nan` as a value. An example can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-nf/fam_file.tsv)
 
-## Test the pipeline
+In the hpo column, multiple comma-separated HPO terms can be present.
 
-### Download local copy of exomiser-data-bundle (~120GB)
+### --application_properties
 
-```bash
-sudo aws s3 sync s3://lifebit-featured-datasets/pipelines/exomiser-data-bundle /data/exomiser-data-bundle --no-sign-request
+This is a file needed by exomiser to run. It contains information on where to find the reference data as well as the versioning of the reference genome. An example can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-nf/application.properties)
+
+### --auto_config_yml
+
+This is a file needed by exomiser to run. It contains placeholders in the text that get filled in by the second process of the pipeline just before running exomiser. The one used for testing can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-nf/auto_config.yml)
+
+### --exomiser_data
+
+This path refers to the reference data bundle needed by exomiser (~120 GB!). A copy of such files can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-data-bundle/) . The reference dataset has been added as a parameter, allowing flexibility to pull the data from any resource (i.e. cloud, local storage, ftp, ...) and Nextlfow will automatically take care of fetching the data without having to add anything to the pipeline itself.
+
+There are other parameters that can be tweaked to personalize the behaviour of the pipeline. These are referenced in `nextflow.config`
+
+### Processes
+
+Here is the list of steps performed by this pipeline.
+
+1. `process ped_hpo_creation` - this process produces the pedigree (PED) file needed for exomiser to run using a python script.
+2. `process exomiser` - this process is where the autoconfig file for exomiser is generated and exomiser is run.
+
+### Output
+
+- a html and a json file containing a report on the analysis
+- the autoconfig file, for reproducibility purpose
+- a vcf file with the called variants that are identified as causative
+
+### Usage
+
+The pipeline can be run like:
+
+```
+nextflow run main.nf --families_file 's3://lifebit-featured-datasets/pipelines/exomiser-nf/fam_file.tsv' \
+        --prioritisers 'hiPhivePrioritiser' \
+        --exomiser_data 's3://lifebit-featured-datasets/pipelines/exomiser-data-bundle' \
+        --application_properties 's3://lifebit-featured-datasets/pipelines/exomiser-nf/application.properties' \
+        --auto_config_yml 's3://lifebit-featured-datasets/pipelines/exomiser-nf/auto_config.yml'
 ```
 
-Or if in a EC2 from HK region download faster with HKGI AWS credentials
+### Testing
+
+To run the pipeline with `docker` (used by default), type the following commands:
+
+To test the pipeline on a multi-VCF:
+
 ```
-sudo aws s3 sync s3://lifebit-featured-datasets-hkgi/pipelines/exomiser-data-bundle /data/exomiser-data-bundle
+nextflow run main.nf -profile family_test
 ```
 
-### Test run (With a HOP term file, no fetch from database)
+To test the pipeline on a single-sample VCF:
 
-```bash
-nextflow run main.nf -profile test
 ```
+nextflow run main.nf -profile single_vcf_test
+```
+
+Be careful when running this, as the pipeline requires the staging of 120 GB of reference data, required by exomiser, so only that takes a while!
+
+### Running on CloudOS
+
+### Profiles
+
+|  profile name   |                              Run locally                               | Run on CloudOS |                                   description                                   |
+| :-------------: | :--------------------------------------------------------------------: | :------------: | :-----------------------------------------------------------------------------: |
+|   test_family   | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   | this test is designed to test the pipeline on a multi-VCF with trio information |
+| test_single_vcf | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   |        this test is designed to test the pipeline on a single-sample-VCF        |

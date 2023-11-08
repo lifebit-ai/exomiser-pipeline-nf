@@ -23,4 +23,4 @@
 #           sudo mv nextflow /usr/local/bin/
 #       - name: Basic workflow tests
 #         run: |
-#           nextflow run ${GITHUB_WORKSPACE} -profile test
+#           nextflow run ${GITHUB_WORKSPACE} -profile single_vcf_test
