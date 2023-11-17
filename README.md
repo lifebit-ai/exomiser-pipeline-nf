@@ -1,5 +1,7 @@
 # Exomiser
 
+# Exomiser
+
 ## Pipeline documentation
 
 Table of contents
