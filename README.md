@@ -1,5 +1,7 @@
 # Exomiser
 
+# Exomiser
+
 ## Pipeline documentation
 
 Table of contents
@@ -62,7 +64,7 @@ This is a file needed by exomiser to run. It contains placeholders in the text t
 
 ### --exomiser_data
 
-This path refers to the reference data bundle needed by exomiser (~120 GB!). A copy of such files can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-data-bundle/) . The reference dataset has been added as a parameter, allowing flexibility to pull the data from any resource (i.e. cloud, local storage, ftp, ...) and Nextlfow will automatically take care of fetching the data without having to add anything to the pipeline itself.
+This path refers to the reference data bundle needed by exomiser (~120 GB!). A copy of such files can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-data-bundle/) . The reference dataset has been added as a parameter, allowing flexibility to pull the data from any resource (i.e. cloud, local storage, ftp, ...) and Nextflow will automatically take care of fetching the data without having to add anything to the pipeline itself.
 
 There are other parameters that can be tweaked to personalize the behaviour of the pipeline. These are referenced in `nextflow.config`
 
@@ -98,13 +100,19 @@ To run the pipeline with `docker` (used by default), type the following commands
 To test the pipeline on a multi-VCF:
 
 ```
-nextflow run main.nf -profile family_test
+nextflow run main.nf -profile test_full_family
+```
+
+or
+
+```
+nextflow run main.nf -profile test_full_multi_hpo
 ```
 
 To test the pipeline on a single-sample VCF:
 
 ```
-nextflow run main.nf -profile single_vcf_test
+nextflow run main.nf -profile test_full_single_vcf
 ```
 
 Be careful when running this, as the pipeline requires the staging of 120 GB of reference data, required by exomiser, so only that takes a while!
@@ -113,7 +121,8 @@ Be careful when running this, as the pipeline requires the staging of 120 GB of 
 
 ### Profiles
 
-|  profile name   |                              Run locally                               | Run on CloudOS |                                   description                                   |
-| :-------------: | :--------------------------------------------------------------------: | :------------: | :-----------------------------------------------------------------------------: |
-|   test_family   | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   | this test is designed to test the pipeline on a multi-VCF with trio information |
-| test_single_vcf | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   |        this test is designed to test the pipeline on a single-sample-VCF        |
+|     profile name     |                              Run locally                               | Run on CloudOS |                                               description                                                |
+| :------------------: | :--------------------------------------------------------------------: | :------------: | :------------------------------------------------------------------------------------------------------: |
+|   test_full_family   | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   |             this test is designed to test the pipeline on a multi-VCF with trio information              |
+| test_full_single_vcf | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   |                    this test is designed to test the pipeline on a single-sample-VCF                     |
+| test_full_multi_hpo  | the data required is so big, it was tested on a c5.4xlarge EC2 machine |   Successful   | this test is designed to test the pipeline on a multi-VCF with trio information using multiple HPO terms |
