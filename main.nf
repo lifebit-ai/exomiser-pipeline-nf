@@ -129,7 +129,8 @@ ch_combined = ch_vcf_paths2.join(ch_to_join, by: 0).view()
 
 if (!params.data_bundle && params.exomiser_profile_files){
     exomiser_data=params.exomiser_data_profile[params.exomiser_profile_files].data_bundle
-    Channel.fromPath("${params.exomiser_data}")
+
+    Channel.fromPath("${exomiser_data}")
             .set{ch_exomiser_data }
 }else{
     Channel.fromPath("${params.data_bundle}")
