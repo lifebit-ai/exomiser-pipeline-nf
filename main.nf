@@ -136,7 +136,7 @@ if (!params.data_bundle && params.exomiser_profile_files){
           .set{ch_exomiser_data }
 }
 
-ch_exomiser_data.view()
+
 
 
 process exomiser {
