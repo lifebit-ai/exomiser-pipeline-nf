@@ -132,7 +132,7 @@ if(params.exomiser_data){
           .set{ch_exomiser_data }
           }
 else{
-    exomiser_data=params.exomiser_profile[params.params.exomiser_profile_files].exomiser_data
+    exomiser_data=params.exomiser_profile[params.params.exomiser_profile_files].data_bundle
     Channel.fromPath("${params.exomiser_data}")
             .set{ch_exomiser_data }
   
