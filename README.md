@@ -62,9 +62,13 @@ This is a file needed by exomiser to run. It contains information on where to fi
 
 This is a file needed by exomiser to run. It contains placeholders in the text that get filled in by the second process of the pipeline just before running exomiser. The one used for testing can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-nf/auto_config.yml)
 
-### --exomiser_data
+### --exomiser_profile
 
-This path refers to the reference data bundle needed by exomiser (~120 GB!). A copy of such files can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-data-bundle/) . The reference dataset has been added as a parameter, allowing flexibility to pull the data from any resource (i.e. cloud, local storage, ftp, ...) and Nextflow will automatically take care of fetching the data without having to add anything to the pipeline itself.
+This is a parameter that defines the kind of reference data. It accepts "test" or "full".
+
+The "full" profile points to the reference data bundle needed by exomiser (~120 GB!). A copy of such files can be found [here](https://lifebit-featured-datasets.s3.eu-west-1.amazonaws.com/pipelines/exomiser-data-bundle/) . The reference dataset has been added as a parameter, allowing flexibility to pull the data from any resource (i.e. cloud, local storage, ftp, ...) and Nextflow will automatically take care of fetching the data without having to add anything to the pipeline itself.
+
+The "test" profile points to some mock data used in testing.
 
 There are other parameters that can be tweaked to personalize the behaviour of the pipeline. These are referenced in `nextflow.config`
 
