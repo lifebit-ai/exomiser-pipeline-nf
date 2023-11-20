@@ -24,7 +24,7 @@ if(params.hpo_file) log.info "-${c_teal}filename_hpo:${c_reset}- ${params.filena
 if(params.ped_file) log.info "-${c_teal}filename_ped:${c_reset}- ${params.ped_file}"
 if(params.families_file) log.info "-${c_teal}families_file:${c_reset}- ${params.families_file}"
 log.info "-${c_teal}analysis_mode:${c_reset}- ${params.analysis_mode}"
-log.info "-${c_teal}exomiser_data:${c_reset}- ${params.exomiser_data}"
+log.info "-${c_teal}exomiser_data:${c_reset}- ${params.data_bundle}"
 log.info "-${c_teal}exomiser_phenotype_data:${c_reset}- ${params.exomiser_phenotype_data}"
 log.info "-${c_teal}phenix_data:${c_reset}- ${params.phenix_data}"
 log.info "-${c_teal}pathogenicity_sources:${c_reset}- ${params.pathogenicity_sources}"
@@ -127,15 +127,13 @@ ch_combined = ch_vcf_paths2.join(ch_to_join, by: 0).view()
   Run containarised Exomiser
 ---------------------------------------------------*/
 
-if(params.exomiser_data){
-          Channel.fromPath("${params.exomiser_data}")
-          .set{ch_exomiser_data }
-          }
-else{
-    exomiser_data=params.exomiser_profile[params.params.exomiser_profile_files].data_bundle
+if (!params.data_bundle && params.exomiser_profile_files){
+    exomiser_data=params.exomiser_profile[params.exomiser_profile_files].data_bundle
     Channel.fromPath("${params.exomiser_data}")
             .set{ch_exomiser_data }
-  
+}else{
+    Channel.fromPath("${params.data_bundle}")
+          .set{ch_exomiser_data }
 }
 
 
