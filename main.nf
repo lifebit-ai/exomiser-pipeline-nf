@@ -127,7 +127,6 @@ ch_combined = ch_vcf_paths2.join(ch_to_join, by: 0).view()
   Run containarised Exomiser
 ---------------------------------------------------*/
 
-ld_score_annots = params.ld_score_weights_annotations[params.ld_score_weights_annotation_files].annotations
 if(params.exomiser_data){
           Channel.fromPath("${params.exomiser_data}")
           .set{ch_exomiser_data }
