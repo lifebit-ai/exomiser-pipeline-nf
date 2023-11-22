@@ -45,6 +45,16 @@ log.info ""
 //   Check input parameters
 // ---------------------------------------------------*/
 
+def replaceBucket(file, bucket="${params.reference_data_bucket}", pattern="${params.bucket_pattern}") {
+    reg_exp = ~/(s3:\/\/[a-zA-Z0-9\-]*$pattern)/
+    file = file.toString()
+    if (file =~ reg_exp) {
+         replace_bucket = (file =~ reg_exp)[0]
+         file = file.replaceAll(replace_bucket[0], bucket)
+    }
+    return file
+}
+
 if(params.families_file) {
   Channel
       .fromPath( "${params.families_file}")
@@ -60,7 +70,7 @@ Channel
     .fromPath(params.families_file)
     .ifEmpty { exit 1, "Cannot find input file : ${params.families_file}" }
     .splitCsv(header:true, sep:'\t', strip: true)
-    .map {row -> [ row.proband_id, file(row.vcf_path), file(row.vcf_index_path)] }
+    .map {row -> [ row.proband_id, file(replaceBucket(row.vcf_path)), file(replaceBucket(row.vcf_index_path))] }
     .into {ch_vcf_paths; ch_vcf_paths2}
 
 // Conditional creation of channels, custom if provided else default from bin/
